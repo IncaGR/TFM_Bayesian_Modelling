@@ -4,19 +4,20 @@ library(car)
 
 getwd()
 
-wd = "C:/Users/ggari/Desktop/Master_MESIO/TFM"
+wd = "C:/Users/ggari/Desktop/1_projects/TFM"
 
-path_functions = here(wd,"srapper","functions_R","clean_data.R")
+path_functions = here(wd,"2_code","2_R_code","functions","data_mapping.R")
 
 source(path_functions)
 
 
 # Reading data ------------------------------------------------------------
+path_data_Ide = "1_data/2_data_Idealista"
 
-path_idealista = here(wd,"srapper","extraction_2022-11-01","datos_scrapping_2022-11-01.csv")
-path_idealista = here(wd,"srapper","extraction_2022-11-17","datos_scrapping_2022-11-19.csv")
+path_idealista = here(wd, path_data_Ide,"1_raw","extraction_2022-11-01","datos_scrapping_2022-11-01.csv")
+path_idealista = here(wd,path_data_Ide,"1_raw","extraction_2022-11-17","datos_scrapping_2022-11-19.csv")
 
-path_shp_barcelona = here(wd,"Barrios_de_Barcelona","0301040100_Barris_ADM_ETRS89.shp")
+path_shp_barcelona = here(wd,"1_data","3_data_Barris_Barcelona","0301040100_Barris_ADM_ETRS89.shp")
 
 data_idealista = read.csv(path_idealista,encoding = "UTF-8")
 
@@ -58,66 +59,14 @@ data_idealista = data_idealista %>%
          key_open = ifelse(regex_barris == "poble sec parc montjuïc", "poble sec", key_open)
   )
 
-# changing some names in shp data
-# barcelona_shape = barcelona_shape %>%
-#   mutate(key_barris = regex_barris,
-#          # idealista_nom_barri = ifelse(nom_lower == "el barri gòtic", "el gòtic",
-#          #                              idealista_nom_barri),
-#          # idealista_nom_barri = ifelse(nom_lower == "sant pere, santa caterina i la ribera",
-#          #                              "sant pere - santa caterina i la ribera", idealista_nom_barri),
-#          key_barris = ifelse(regex_barris == "poble sec", "poble sec parc montjuïc",
-#                              key_barris),
-#          # idealista_nom_barri = ifelse(nom_lower == "la marina de port", "la marina del port",
-#          # idealista_nom_barri),
-#          # idealista_nom_barri = ifelse(nom_lower == "la vila de gràcia", "vila de gràcia",
-#          # idealista_nom_barri),
-#          key_barris = ifelse(regex_barris == "sant genís agudells", "sant genís agudells montbau",
-#                              key_barris),
-#          key_barris = ifelse(regex_barris == "montbau", "sant genís agudells montbau", key_barris),
-#          key_barris = ifelse(regex_barris == "vall hebron","vall hebron clota",
-#                              key_barris),
-#          key_barris = ifelse(regex_barris == "clota", "vall hebron clota",
-#                              key_barris),
-#          key_barris = ifelse(regex_barris == "turó peira", "can peguera turó peira",
-#                              key_barris),
-#          # idealista_nom_barri = ifelse(nom_lower == "vallvidrera, el tibidabo i les planes",
-#          #                              "vallvidrera, el tibidabo i les planes", idealista_nom_barri),
-#          key_barris = ifelse(regex_barris == "besòs maresme", "besòs", key_barris),
-#          key_barris = ifelse(regex_barris == "can peguera", "can peguera turó peira",
-#                              key_barris),
-#          # idealista_nom_barri = ifelse(nom_lower == "la trinitat nova", "")) no encuentro
-#          key_barris = ifelse(regex_barris == "torre baró", "ciutat meridiana torre baró vallbona",
-#                              key_barris),
-#          key_barris = ifelse(regex_barris == "ciutat meridiana", "ciutat meridiana torre baró vallbona",
-#                              key_barris),
-#          key_barris = ifelse(regex_barris == "vallbona","ciutat meridiana torre baró vallbona",
-#                              key_barris)
-#          # ,idealista_nom_barri = ifelse(nom_lower == "baró de viver") no encuentro
-#   )
-# 
-
-# 
-# idx = sort(unique(data_idealista$regex_barris)) %in% sort(unique(barcelona_shape$key_barris))
-# 
-# sort(unique(data_idealista$key_barris))[!idx]
-
 
 # to connect Idealista data and shp file the key is: key_shp
 data_idealista = data_idealista %>%
   mutate(key_shp = regex_barris)
 
-# barcelona_shape = barcelona_shape %>%
-#   mutate(key_shp = key_barris)
-
-# idx = sort(unique(data_idealista$key_barris)) %in% sort(unique(barcelona_shape$regex_barris))
-# 
-# sort(unique(data_idealista$key_barris))[!idx]
 
 data_idealista = data_idealista %>%
   dplyr::rename(id = X.U.FEFF.id)
-
-
-# write_csv2(barcelona_shape,"C:/Users/ggari/Desktop/Master_MESIO/TFM/Barrios_de_Barcelona/barrios_bcn_clean.csv")
 
 
 # data cleaning -----------------------------------------------------------
@@ -126,24 +75,6 @@ data_idealista = data_idealista %>%
 ggplot(data_idealista,aes(square_mt,price)) + 
   geom_jitter()
 
-# let's check the observation with price around 80000/ month.
-
-# data_idealista[data_idealista$price>70000,] # vamos a remover la observacion
-# 
-# 
-# # let's check the observations with more than 250 square meters:
-# 
-# big_mt2 = data_idealista[data_idealista$square_mt> 250,] 
-
-# filtrar piso o chalet:
-# loft con 1/0 rooms
-# wc > 4?
-# alquiler de temporada
-
-# colnames(data_idealista)
-
-# data_idealista = data_idealista %>%
-#   rename(nombre = X.U.FEFF.name)
 
 # data_idealista = data_idealista[data_idealista$price<70000,]
 # data_idealista = data_idealista[data_idealista$price<10000,] # testing 
@@ -204,18 +135,7 @@ data_idealista = data_idealista %>%
 ggplot(data_idealista,aes(square_mt,price, col = distrito2)) + 
   geom_jitter()
 
-# saving idealista data 
-#### Function save the clean file with the today date
-# 
-# clean_df <- function(df){
-#   
-#   
-#   
-#   
-#   
-# }
 
 
-write.csv(data_idealista,"C:/Users/ggari/Desktop/Master_MESIO/TFM/srapper/data_scrapping/idealista_data_clean_2.csv",
+write.csv(data_idealista,"C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/2_clean/idealista_data_clean_2.csv",
           fileEncoding = "UTF-8")
-
