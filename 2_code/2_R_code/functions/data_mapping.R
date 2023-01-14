@@ -110,11 +110,15 @@ read_API_data <- function(){
   with the function check_names_open_data().
   
   "
+  # wd = "C:/Users/ggari/Desktop/1_projects/TFM"
+  # path_open_data <- "Desktop/1_projects/TFM/1_data/1_data_API/dataset_opendata"
   
   for (f in files){
+    path_open_data <- "Desktop/1_projects/TFM/1_data/1_data_API/dataset_opendata"
     print(f)
     f_split = strsplit(f,".csv")
-    path_open_data =  here(wd,"srapper","dataset_opendata",f)
+    path_open_data =  here(path_open_data,f)
+    print(path_open_data)
     print(f_split)
     string_ = toString(f_split)
     df_ = assign(string_, read.csv(path_open_data,encoding = "UTF-8"))
