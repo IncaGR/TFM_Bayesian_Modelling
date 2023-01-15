@@ -1,4 +1,8 @@
+library(car)
 
+# upload data ready for modelling ------------------------------------------
+
+data_idealista <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_modelling.RDS")
 
 
 # bar de copas
@@ -49,57 +53,58 @@ regressors<-c(
 #                   Museus = 0))
 
 
-lm1 <- lm(reformulate(regressors,"log_price"),
-          data_idealista)
-
 lm0 <- lm(reformulate("square_mt","log_price"),
           data_idealista)
 
-summary(lm0)
-
-lm0 <- lm(reformulate("square_mt + rooms2","log_price"),
+lm1 <- lm(reformulate("square_mt + rooms2","log_price"),
           data_idealista)
+
+lm2 <- lm(reformulate(regressors,"log_price"),
+          data_idealista)
+
+
 summary(lm0)
+summary(lm1)
+summary(lm2)
+
 
 # con variables de open data sale max R2 .675
 # sin variables open data pero con la variable barrios en vez de distrito sale 0.69
 
+vif(lm2)
 
-summary(lm1)
-vif(lm1)
+plot(lm2,ask=F)
 
-plot(lm1,ask=F)
-
-data_idealista[which(hatvalues(lm1)>0.99),]
+# data_idealista[which(hatvalues(lm2)>0.99),]
 
 # sort(cooks.distance(lm1))
-cooksd =  cooks.distance(lm1)
-data_idealista$cookd = cooks.distance(lm1)
+cooksd =  cooks.distance(lm2)
+data_idealista$cookd = cooks.distance(lm2)
 
 
-data_idealista[data_idealista$cookd>0.01,]
+dim(data_idealista[data_idealista$cookd>0.01,])
 
-plot(cooks.distance(lm1))
+plot(cooks.distance(lm2))
 abline(h = 4*mean(cooksd, na.rm=T), col="red") 
 
 # outlierTest(lm1)
 # cook_test
 
 # cook_test = data_idealista[data_idealista$cookd >(4*mean(cooksd, na.rm=T)),]
-cook_test = data_idealista[data_idealista$cookd < 0.01,]
+data_cook = data_idealista[data_idealista$cookd < 0.01,]
 
 
-lm1 <- lm(reformulate(regressors,"log_price"),
-          cook_test)
+lm3 <- lm(reformulate(regressors,"log_price"),
+          data_cook)
 
 # con variables de open data sale max R2 .675
 # sin variables open data pero con la variable barrios en vez de distrito sale 0.69
 
 
-summary(lm1)
-vif(lm1)
+summary(lm3)
+vif(lm3)
 
-plot(lm1,ask=F)
+plot(lm3,ask=F)
 
 
 # Modeling Bayesian ------------------------------------------------------
