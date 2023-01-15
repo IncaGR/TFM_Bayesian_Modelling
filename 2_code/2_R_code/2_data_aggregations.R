@@ -13,7 +13,7 @@ path_functions = here(wd,"2_code","2_R_code","functions","data_mapping.R")
 source(path_functions)
 
 
-# unique(data_idealista$distrito2)
+# dummy table to map the data between Idealista and data from API Barcelona
 
 table_districte = data.frame(codi_districte = c(1:10),
                              distrito2= c("Distrito Ciutat Vella",
@@ -37,15 +37,14 @@ path_data_Ide = "1_data/2_data_Idealista"
 
 path_idealista = here(wd,path_data_Ide,"2_clean","idealista_data_clean_2.csv")
 
-# path_idealista = here(wd,"srapper","data_scrapping","idealista_data_clean_2.csv") # already cleaned
-
-# path_shp_barcelona = here(wd,"Barrios_de_Barcelona","0301040100_Barris_ADM_ETRS89.shp")
 path_shp_barcelona = here(wd,"1_data","3_data_Barris_Barcelona","0301040100_Barris_ADM_ETRS89.shp")
 
 data_idealista = read.csv(path_idealista,encoding = "UTF-8")
 
 barcelona_shape <- sf::st_read(path_shp_barcelona)
 
+
+# Mapping data  -----------------------------------------------------------
 
 mapping = mapIdBarri(barcelona_shape)
 
@@ -56,7 +55,7 @@ unique(data_idealista$key_shp)
 
 unique(data_idealista$key_open)
 
-
+# mapping by id because mapping by names cause errors, different names.. etc
 data_idealista = left_join(data_idealista,mapping, by=c("key_open" ="regex_barris"))
 
 data_idealista = left_join(data_idealista,table_districte, by="distrito2")
@@ -64,7 +63,8 @@ data_idealista = left_join(data_idealista,table_districte, by="distrito2")
 
 summary(data_idealista)
 
-
+# filtering data if the id is not present:
+# sometime the scrapper return data from outside of Barcelona
 data_idealista = data_idealista %>% dplyr::filter(!is.na(codi_districte))
 
 data_idealista$id_barri <- as.numeric(data_idealista$id_barri)
@@ -77,12 +77,13 @@ unique((data_idealista %>% dplyr::filter(is.na(id_barri)))$regex_barri)
 
 data_idealista = data_idealista %>% dplyr::filter(!is.na(id_barri))
 
+summary(data_idealista)
 
 ggplot(data_idealista,aes(square_mt,price, col = distrito2)) + 
   geom_jitter()
 
 
-summary(data_idealista)
+# reading data API Barcelona ----------------------------------------------
 
 path_open_data <- "1_data/1_data_API/dataset_opendata"
 
@@ -92,6 +93,8 @@ files <- list.files(here(wd,path_open_data))
 
 read_API_data()
 
+
+# Aggregations data API Barcelona -----------------------------------------
 
 data_idealista = groupingDataOpenData(data_idealista,hospitales,"hospitals")
 
@@ -106,16 +109,14 @@ data_idealista = groupingDataOpenData(data_idealista,hospitales,"hospitals")
 hospitales = hospitales %>%
   dplyr::filter(secondary_filters_name %in% c("Hospitals i clíniques","CAPs","Centres urgències (CUAPs)"))
 
-
 # hospitales %>%
 #   dplyr::filter(!secondary_filters_name %in% c("Hospitals i clíniques","CAPs","Centres urgències (CUAPs)"))
-
-
-# ya podria agregar esto al dataset original.
 
 n_hospital_barri = hospitales %>%
   group_by(addresses_neighborhood_id,addresses_neighborhood_name,secondary_filters_name) %>%
   count(name = "counts",sort = T)
+
+print(n_hospital_barri)
 
 # codi_barri
 # addresses_neighborhood_id
@@ -133,6 +134,8 @@ wider_type = wider_type %>%
          caps = "CAPs"  ,
          cuaps = "Centres urgències (CUAPs)")
 
+print(wider_type)
+
 # n_all_barris = hospitales %>%
 #   group_by(addresses_neighborhood_id) %>%
 #   count(name = "total_hospitals",sort = T)
@@ -146,8 +149,26 @@ data_idealista = left_join(data_idealista,wider_type,by=c("id_barri" = "addresse
 # data_idealista = left_join(data_idealista,n_all_barris,by=c("id_barri" = "addresses_neighborhood_id"))
 
 
+# There are 365 NA's when merging the hospital data with the Idealista dataset
+# let's see if that is because there are no equipment in zone neighbourhoods
+# or there are an error doing the maapping
 summary(data_idealista)
 
+dim(data_idealista)
+
+list_idealista = data_idealista %>% dplyr::filter(is.na(caps)) %>% select(id_barri) %>% unique() %>% array()
+list_hospital = wider_type %>% ungroup() %>% select(addresses_neighborhood_id) %>%
+  array()
+
+diff = base::setdiff(list_idealista,list_hospital)
+
+if(length(list_idealista) == length(diff)) {
+  
+  
+  print("the NA's are correct as those id neigbourhoods have not equipment")
+} else{
+  print("there are error review the data")
+}
 
 
 
