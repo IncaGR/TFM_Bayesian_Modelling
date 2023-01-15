@@ -1,4 +1,6 @@
 
+
+
 # bar de copas
 colnames(data_idealista)
 
