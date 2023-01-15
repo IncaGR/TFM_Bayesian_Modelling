@@ -96,6 +96,9 @@ read_API_data()
 
 # Aggregations data API Barcelona -----------------------------------------
 
+
+# Hospitals ---------------------------------------------------------------
+
 data_idealista = groupingDataOpenData(data_idealista,hospitales,"hospitals")
 
 # see how many centres de dia we have
@@ -156,7 +159,10 @@ summary(data_idealista)
 
 dim(data_idealista)
 
+# to check the difference of length between the Idealista missing data for hospitals
+# and the id from hospitals data that have not equipment
 list_idealista = data_idealista %>% dplyr::filter(is.na(caps)) %>% select(id_barri) %>% unique() %>% array()
+
 list_hospital = wider_type %>% ungroup() %>% select(addresses_neighborhood_id) %>%
   array()
 
@@ -165,14 +171,15 @@ diff = base::setdiff(list_idealista,list_hospital)
 if(length(list_idealista) == length(diff)) {
   
   
-  print("the NA's are correct as those id neigbourhoods have not equipment")
+  print("The NA's are correct as those id neigbourhoods have not
+        equipment for hospitals data.")
 } else{
-  print("there are error review the data")
+  print("There are errors. Review the data.")
 }
 
 
 
-# terrasas ----------------------------------------------------------------
+# Terrasas ----------------------------------------------------------------
 
 colnames(terrazas2)
 head(terrazas2)
