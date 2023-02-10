@@ -109,4 +109,59 @@ plot(lm3,ask=F)
 
 # Modeling Bayesian ------------------------------------------------------
 
+library(rstan)
+# First we are going to try a simple bayesian model with covariate square_mt.
 
+# Define the Stan model
+# Define the Stan model
+model_code <- "
+data {
+  int<lower=0> N;
+  vector[N] x;
+  vector[N] y;
+}
+parameters {
+  real alpha;
+  real beta;
+  real<lower=0> sigma;
+}
+model {
+  y ~ normal(alpha + beta * x, sigma);
+}
+generated quantities {
+  vector[N] y_sim;
+  for (i in 1:N) {
+    y_sim[i] <- normal_rng(alpha + beta * x[i], sigma);
+  }
+}
+"
+
+
+n = dim(data_cook)[1] 
+
+# Compile the model
+model <- stan_model(model_code = model_code)
+
+# Fit the model to the data
+fit <- sampling(model, data = list(N = n, x = data_cook$square_mt, y = data_cook$price))
+
+
+# Extract the estimated parameters
+alpha <- extract(fit)$alpha[1]
+beta <- extract(fit)$beta[1]
+sigma <- extract(fit)$sigma[1]
+
+
+# Plot the trace plots
+par(mfrow = c(2, 2))
+plot(fit, pars = c("alpha", "beta", "sigma"))
+
+# Plot the posterior predictive checks
+y_sim <- extract(fit)$y_sim
+posterior_predictive_check <- data.frame(y_observed = data_cook$price, y_sim = y_sim[, 1])
+ggplot(posterior_predictive_check, aes(y_observed, y_sim)) + 
+  geom_point() + 
+  geom_abline(intercept = 0, slope = 1) + 
+  xlab("Observed y") + 
+  ylab("Simulated y") + 
+  ggtitle("Posterior Predictive Checks")
