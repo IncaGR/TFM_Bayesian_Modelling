@@ -1,9 +1,11 @@
+library(tidyverse)
 library(car)
+library(here)
+
 
 # upload data ready for modelling ------------------------------------------
 
-data_idealista <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_modelling.RDS")
-
+data_idealista <- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista','data_modelling.RDS'))
 
 # bar de copas
 colnames(data_idealista)
@@ -177,7 +179,7 @@ sigma <- extract(fit)$sigma[1]
 par(mfrow = c(2, 2))
 plot(fit, pars = c("alpha", "beta", "sigma"))
 
-library(tidyverse)
+
 # Plot the posterior predictive checks
 y_sim <- extract(fit)$y_sim
 posterior_predictive_check <- data.frame(y_observed = data_cook$price, y_sim = y_sim[1,])
