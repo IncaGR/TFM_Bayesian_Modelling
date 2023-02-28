@@ -91,7 +91,14 @@ abline(h = 4*mean(cooksd, na.rm=T), col="red")
 # cook_test
 
 # cook_test = data_idealista[data_idealista$cookd >(4*mean(cooksd, na.rm=T)),]
-data_cook = data_idealista[data_idealista$cookd < 0.01,]
+
+# data_cook = data_idealista[data_idealista$cookd < 0.005,]
+# data_cook = data_idealista[data_idealista$cookd < 0.01,]
+test <- c(1479,2777,2825)
+
+data_cook = data_idealista[-test,]
+data_cook = data_cook[data_cook$cookd < 0.005,]
+
 
 
 lm3 <- lm(reformulate(regressors,"log_price"),
@@ -107,10 +114,22 @@ vif(lm3)
 plot(lm3,ask=F)
 
 
+# some outliers, now the plots are better
+# data_idealista[2777,]
+# data_idealista[2825,]
+# data_idealista[1479,]
 # Modeling Bayesian ------------------------------------------------------
 
-library(rstan)
+# remove.packages(c("StanHeaders", "rstan"))
+# install.packages("StanHeaders", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+# install.packages("rstan", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+
+library("rstan")
 # First we are going to try a simple bayesian model with covariate square_mt.
+
+options(mc.cores = parallel::detectCores())
+
+rstan_options(auto_write = TRUE)
 
 # Define the Stan model
 # Define the Stan model
@@ -127,6 +146,7 @@ parameters {
 }
 model {
   y ~ normal(alpha + beta * x, sigma);
+  
 }
 generated quantities {
   vector[N] y_sim;
@@ -137,14 +157,15 @@ generated quantities {
 "
 
 
-n = dim(data_cook)[1] 
+n = nrow(data_cook)
 
 # Compile the model
-model <- stan_model(model_code = model_code)
+model = stan_model(model_code = model_code)
 
 # Fit the model to the data
 fit <- sampling(model, data = list(N = n, x = data_cook$square_mt, y = data_cook$price))
 
+print(fit)
 
 # Extract the estimated parameters
 alpha <- extract(fit)$alpha[1]
@@ -156,12 +177,27 @@ sigma <- extract(fit)$sigma[1]
 par(mfrow = c(2, 2))
 plot(fit, pars = c("alpha", "beta", "sigma"))
 
+library(tidyverse)
 # Plot the posterior predictive checks
 y_sim <- extract(fit)$y_sim
-posterior_predictive_check <- data.frame(y_observed = data_cook$price, y_sim = y_sim[, 1])
+posterior_predictive_check <- data.frame(y_observed = data_cook$price, y_sim = y_sim[1,])
 ggplot(posterior_predictive_check, aes(y_observed, y_sim)) + 
   geom_point() + 
   geom_abline(intercept = 0, slope = 1) + 
   xlab("Observed y") + 
   ylab("Simulated y") + 
   ggtitle("Posterior Predictive Checks")
+
+
+
+# Some simulated prices are negative, this cannot be the case in price.
+
+
+
+
+# remove.packages(c("rstan","StanHeaders"))
+# if (file.exists(".RData")) file.remove(".RData")
+# 
+# Sys.setenv(MAKEFLAGS = paste0("-j",parallel::detectCores()))
+# 
+# install.packages(c("StanHeaders","rstan"),type="source")
