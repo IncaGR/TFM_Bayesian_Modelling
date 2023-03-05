@@ -127,6 +127,7 @@ plot(lm3,ask=F)
 # install.packages("rstan", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
 
 library("rstan")
+library(bayesplot)
 # First we are going to try a simple bayesian model with covariate square_mt.
 
 options(mc.cores = parallel::detectCores())
@@ -191,7 +192,7 @@ ggplot(posterior_predictive_check, aes(y_observed, y_sim)) +
   ggtitle("Posterior Predictive Checks")
 
 
-
+traceplot(fit)
 # Some simulated prices are negative, this cannot be the case in price.
 
 
