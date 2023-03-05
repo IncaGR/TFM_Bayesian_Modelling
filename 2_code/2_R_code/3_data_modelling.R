@@ -134,65 +134,65 @@ options(mc.cores = parallel::detectCores())
 
 rstan_options(auto_write = TRUE)
 
-# Define the Stan model
-# Define the Stan model
-model_code <- "
-data {
-  int<lower=0> N;
-  vector[N] x;
-  vector[N] y;
-}
-parameters {
-  real alpha;
-  real beta;
-  real<lower=0> sigma;
-}
-model {
-  y ~ normal(alpha + beta * x, sigma);
-  
-}
-generated quantities {
-  vector[N] y_sim;
-  for (i in 1:N) {
-    y_sim[i] <- normal_rng(alpha + beta * x[i], sigma);
-  }
-}
-"
-
-
-n = nrow(data_cook)
-
-# Compile the model
-model = stan_model(model_code = model_code)
-
-# Fit the model to the data
-fit <- sampling(model, data = list(N = n, x = data_cook$square_mt, y = data_cook$price))
-
-print(fit)
-
-# Extract the estimated parameters
-alpha <- extract(fit)$alpha[1]
-beta <- extract(fit)$beta[1]
-sigma <- extract(fit)$sigma[1]
-
-
-# Plot the trace plots
-par(mfrow = c(2, 2))
-plot(fit, pars = c("alpha", "beta", "sigma"))
-
-
-# Plot the posterior predictive checks
-y_sim <- extract(fit)$y_sim
-posterior_predictive_check <- data.frame(y_observed = data_cook$price, y_sim = y_sim[1,])
-ggplot(posterior_predictive_check, aes(y_observed, y_sim)) + 
-  geom_point() + 
-  geom_abline(intercept = 0, slope = 1) + 
-  xlab("Observed y") + 
-  ylab("Simulated y") + 
-  ggtitle("Posterior Predictive Checks")
-
-
-traceplot(fit)
+# # Define the Stan model
+# # Define the Stan model
+# model_code <- "
+# data {
+#   int<lower=0> N;
+#   vector[N] x;
+#   vector[N] y;
+# }
+# parameters {
+#   real alpha;
+#   real beta;
+#   real<lower=0> sigma;
+# }
+# model {
+#   y ~ normal(alpha + beta * x, sigma);
+#   
+# }
+# generated quantities {
+#   vector[N] y_sim;
+#   for (i in 1:N) {
+#     y_sim[i] <- normal_rng(alpha + beta * x[i], sigma);
+#   }
+# }
+# "
+# 
+# 
+# n = nrow(data_cook)
+# 
+# # Compile the model
+# model = stan_model(model_code = model_code)
+# 
+# # Fit the model to the data
+# fit <- sampling(model, data = list(N = n, x = data_cook$square_mt, y = data_cook$price))
+# 
+# print(fit)
+# 
+# # Extract the estimated parameters
+# alpha <- extract(fit)$alpha[1]
+# beta <- extract(fit)$beta[1]
+# sigma <- extract(fit)$sigma[1]
+# 
+# 
+# # Plot the trace plots
+# par(mfrow = c(2, 2))
+# plot(fit, pars = c("alpha", "beta", "sigma"))
+# 
+# 
+# # Plot the posterior predictive checks
+# y_sim <- extract(fit)$y_sim
+# posterior_predictive_check <- data.frame(y_observed = data_cook$price, y_sim = y_sim[1,])
+# ggplot(posterior_predictive_check, aes(y_observed, y_sim)) + 
+#   geom_point() + 
+#   geom_abline(intercept = 0, slope = 1) + 
+#   xlab("Observed y") + 
+#   ylab("Simulated y") + 
+#   ggtitle("Posterior Predictive Checks")
+# 
+# 
+# traceplot(fit)
 # Some simulated prices are negative, this cannot be the case in price.
 
 
@@ -204,3 +204,82 @@ traceplot(fit)
 # Sys.setenv(MAKEFLAGS = paste0("-j",parallel::detectCores()))
 # 
 # install.packages(c("StanHeaders","rstan"),type="source")
+
+
+
+
+
+# price_pooled ------------------------------------------------------------
+
+N= nrow(data_cook)
+barri <- as.numeric(data_cook$barri)
+barri_name <- unique(data_cook$barri)
+J <- length(unique(barri))
+y <- data_cook$log_price
+x <- log(data_cook$square_mt)
+# u <- radon %>% 
+#   group_by(county) %>% 
+#   summarise(u = first(log_uranium)) %>% 
+#   pull(u) # because is value per county 
+
+
+data_list <- list(
+  N = N,
+  y = y,
+  x = x
+)
+
+# price_1 <- stan("2_code\2_R_code\stan_models\1_price_pooled.stan", iter = 500, chains = 1,
+#                 data = data_list, seed = 1)
+# price_1
+
+model_code <- "
+data {
+  int<lower=0> N;
+  vector[N] y;
+  vector<lower=0>[N] x;
+}
+parameters {
+  real a;
+  real b;                           
+  real<lower=0> sigma_y;
+}
+model {
+  y ~ normal(a + b * x, sigma_y);
+}
+"
+
+model = stan_model(model_code = model_code)
+
+# Fit the model to the data
+fit <- sampling(model, data = data_list)
+
+
+print(fit)
+plot(fit)
+
+
+
+price_summary <- tidy(fit, conf.int = T, level = 0.8, rhat = T, ess = T)
+
+df_pooled  <- tibble(
+  barri = barri_name,
+  model = "pooled",
+  intercept = price_summary$estimate[1],
+  slope = price_summary$estimate[2]
+)
+
+id_barrio<- c("la Guineueta",
+               "la Vall d'Hebron", "Canyelles", "la Trinitat Nova", "el Raval", "la Dreta de l'Eixample", "el Barri Gòtic",
+               "Sants")
+
+
+df_model <- df_pooled %>%
+  left_join(data_cook, by = "barri") %>%
+  filter(barri %in% id_barrio)
+
+ggplot(df_model) +
+  geom_point(aes(log(square_mt), log_price)) +
+  geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
+  facet_wrap(~ barri, ncol = 4) +
+  theme(legend.position = "bottom")
