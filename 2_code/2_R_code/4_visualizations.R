@@ -11,6 +11,10 @@ data_idealista %>% ggplot(aes(price)) + geom_histogram() + labs(title = "Distrib
 data_idealista %>% ggplot(aes(log_price)) + geom_histogram() + labs(title = "Distribution of log price")
 
 
+data_idealista %>% ggplot(aes(square_mt)) + geom_histogram() + labs(title = "Distribution of square meters")
+data_idealista %>% ggplot(aes(log(square_mt))) + geom_histogram() + labs(title = "Distribution of log square meters")
+
+
 N <- nrow(data_idealista)
 barri <- as.numeric(data_idealista$barri)
 barri_name <- unique(data_idealista$barri)
