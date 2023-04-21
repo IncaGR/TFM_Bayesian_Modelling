@@ -1,8 +1,17 @@
 library(tidyverse)
 library(here)
 library(car)
+# library(dplyr)
+library(lubridate)
+# library(stringr)
 
 getwd()
+
+
+date_of_data = "2023-04-20" # put the date of the file you want to clean
+
+path_idealista_folder = paste("extraction",date_of_data, sep = "_")
+path_idealista_csv = paste0("datos_scrapping_",date_of_data,".csv")
 
 wd = "C:/Users/ggari/Desktop/1_projects/TFM"
 
@@ -14,8 +23,9 @@ source(path_functions)
 # Reading data ------------------------------------------------------------
 path_data_Ide = "1_data/2_data_Idealista"
 
-path_idealista = here(wd, path_data_Ide,"1_raw","extraction_2022-11-01","datos_scrapping_2022-11-01.csv")
-path_idealista = here(wd,path_data_Ide,"1_raw","extraction_2022-11-17","datos_scrapping_2022-11-19.csv")
+# path_idealista = here(wd, path_data_Ide,"1_raw","extraction_2022-11-01","datos_scrapping_2022-11-01.csv")
+# path_idealista = here(wd,path_data_Ide,"1_raw","extraction_2022-11-17","datos_scrapping_2022-11-19.csv")
+path_idealista = here(wd,path_data_Ide,"1_raw",path_idealista_folder,path_idealista_csv)
 
 path_shp_barcelona = here(wd,"1_data","3_data_Barris_Barcelona","0301040100_Barris_ADM_ETRS89.shp")
 
@@ -136,6 +146,11 @@ ggplot(data_idealista,aes(square_mt,price, col = distrito2)) +
   geom_jitter()
 
 
+# Extract date using regular expression
+date_to_save <- str_extract(path_idealista, "\\d{4}-\\d{2}-\\d{2}")
 
-write.csv(data_idealista,"C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/2_clean/idealista_data_clean_2.csv",
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/2_clean/data_idealista_clean_",date,".csv")
+
+write.csv(data_idealista,path_to_save,
           fileEncoding = "UTF-8")
+print(paste0("Succesfully saved data of: ",date_to_save))
