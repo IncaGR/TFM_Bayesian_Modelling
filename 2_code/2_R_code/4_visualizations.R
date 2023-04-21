@@ -16,7 +16,7 @@ data_idealista %>% ggplot(aes(log(square_mt))) + geom_histogram() + labs(title =
 
 
 N <- nrow(data_idealista)
-barri <- as.numeric(data_idealista$barri)
+barri <- as.numeric(data_idealista$id_barri)
 barri_name <- unique(data_idealista$barri)
 
 # Data visualization
