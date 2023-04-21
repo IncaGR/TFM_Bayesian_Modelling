@@ -1,6 +1,8 @@
 library(tidyverse)
 library(car)
 library(here)
+library(broom)
+library(broom.mixed)
 
 
 # upload data ready for modelling ------------------------------------------
@@ -8,7 +10,6 @@ library(here)
 data_idealista <- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista','data_modelling.RDS'))
 
 # bar de copas
-colnames(data_idealista)
 
 regressors<-c(
   # "barri",
@@ -61,6 +62,9 @@ lm0 <- lm(reformulate("square_mt","log_price"),
 lm1 <- lm(reformulate("square_mt + rooms2","log_price"),
           data_idealista)
 
+lm3 <- lm(reformulate("square_mt + asc","log_price"),
+          data_idealista)
+
 lm2 <- lm(reformulate(regressors,"log_price"),
           data_idealista)
 
@@ -68,6 +72,7 @@ lm2 <- lm(reformulate(regressors,"log_price"),
 summary(lm0)
 summary(lm1)
 summary(lm2)
+summary(lm3)
 
 
 # con variables de open data sale max R2 .675
@@ -103,8 +108,90 @@ data_cook = data_cook[data_cook$cookd < 0.005,]
 
 
 
-lm3 <- lm(reformulate(regressors,"log_price"),
+# lm3 <- lm(reformulate(regressors,"log_price"),
+#           data_cook)
+
+lm3 <- lm(reformulate("square_mt + asc + amueblado + aire + 
+                      estudio + rooms + wc2 + n_arbres_viaris_barri + cuaps
+                      ","log_price"),
           data_cook)
+
+summary(lm3)
+
+# Extraño que con mas habitaciones menos precio, contra intuitivo.
+betas <- as.data.frame(dfbetas(lm3))
+
+summary(betas$rooms)
+
+betas %>%filter(rooms == min(rooms))
+
+colnames(betas) <- gsub(pattern = "[()]|[ ]","",colnames(betas))
+
+colnames(betas) <-  paste0(colnames(betas),'_beta')
+
+data_betas <- cbind(data_cook,betas)
+
+data_betas %>%filter(rooms_beta == min(rooms_beta)) 
+
+
+data_betas = data_betas %>%filter(!rooms_beta == min(rooms_beta)) 
+
+
+
+
+lm3 <- lm(reformulate("square_mt + asc + amueblado + aire + 
+                      estudio + rooms + wc2 + n_arbres_viaris_barri + cuaps
+                      ","log_price"),
+          data_betas)
+
+data_betas <- data_betas %>% select(- contains("_beta"))
+
+
+betas <- as.data.frame(dfbetas(lm3))
+
+
+betas %>%filter(rooms == min(rooms))
+
+colnames(betas) <- gsub(pattern = "[()]|[ ]","",colnames(betas))
+
+colnames(betas) <-  paste0(colnames(betas),'_beta')
+
+data_betas <- cbind(data_betas,betas)
+
+data_betas %>%filter(rooms_beta == min(rooms_beta)) 
+
+
+data_betas = data_betas %>%filter(!rooms_beta == min(rooms_beta)) 
+
+
+lm3 <- lm(reformulate("square_mt + asc + amueblado + aire + 
+                      estudio + rooms + wc2 + n_arbres_viaris_barri + cuaps
+                      ","log_price"),
+          data_betas)
+data_betas <- data_betas %>% select(- contains("_beta"))
+
+
+betas <- as.data.frame(dfbetas(lm3))
+
+
+betas %>%filter(rooms == min(rooms))
+
+
+colnames(betas) <- gsub(pattern = "[()]|[ ]","",colnames(betas))
+
+colnames(betas) <-  paste0(colnames(betas),'_beta')
+
+data_betas <- cbind(data_betas,betas)
+
+data_betas %>%filter(rooms_beta == min(rooms_beta)) 
+
+data_betas = data_betas %>%filter(!rooms_beta == min(rooms_beta)) 
+
+
+lm3 <- lm(reformulate("square_mt + asc + amueblado + aire + 
+                      estudio + rooms + wc2 + n_arbres_viaris_barri + cuaps
+                      ","log_price"),
+          data_betas)
 
 # con variables de open data sale max R2 .675
 # sin variables open data pero con la variable barrios en vez de distrito sale 0.69
@@ -134,86 +221,11 @@ options(mc.cores = parallel::detectCores())
 
 rstan_options(auto_write = TRUE)
 
-# # Define the Stan model
-# # Define the Stan model
-# model_code <- "
-# data {
-#   int<lower=0> N;
-#   vector[N] x;
-#   vector[N] y;
-# }
-# parameters {
-#   real alpha;
-#   real beta;
-#   real<lower=0> sigma;
-# }
-# model {
-#   y ~ normal(alpha + beta * x, sigma);
-#   
-# }
-# generated quantities {
-#   vector[N] y_sim;
-#   for (i in 1:N) {
-#     y_sim[i] <- normal_rng(alpha + beta * x[i], sigma);
-#   }
-# }
-# "
-# 
-# 
-# n = nrow(data_cook)
-# 
-# # Compile the model
-# model = stan_model(model_code = model_code)
-# 
-# # Fit the model to the data
-# fit <- sampling(model, data = list(N = n, x = data_cook$square_mt, y = data_cook$price))
-# 
-# print(fit)
-# 
-# # Extract the estimated parameters
-# alpha <- extract(fit)$alpha[1]
-# beta <- extract(fit)$beta[1]
-# sigma <- extract(fit)$sigma[1]
-# 
-# 
-# # Plot the trace plots
-# par(mfrow = c(2, 2))
-# plot(fit, pars = c("alpha", "beta", "sigma"))
-# 
-# 
-# # Plot the posterior predictive checks
-# y_sim <- extract(fit)$y_sim
-# posterior_predictive_check <- data.frame(y_observed = data_cook$price, y_sim = y_sim[1,])
-# ggplot(posterior_predictive_check, aes(y_observed, y_sim)) + 
-#   geom_point() + 
-#   geom_abline(intercept = 0, slope = 1) + 
-#   xlab("Observed y") + 
-#   ylab("Simulated y") + 
-#   ggtitle("Posterior Predictive Checks")
-# 
-# 
-# traceplot(fit)
-# Some simulated prices are negative, this cannot be the case in price.
-
-
-
-
-# remove.packages(c("rstan","StanHeaders"))
-# if (file.exists(".RData")) file.remove(".RData")
-# 
-# Sys.setenv(MAKEFLAGS = paste0("-j",parallel::detectCores()))
-# 
-# install.packages(c("StanHeaders","rstan"),type="source")
-
-
-
-
-
 # price_pooled ------------------------------------------------------------
 
 N= nrow(data_cook)
-barri <- as.numeric(data_cook$barri)
-barri_name <- unique(data_cook$barri)
+barri <- as.numeric(data_cook$id_barri)
+barri_name <- as.factor(unique(data_cook$barri))
 J <- length(unique(barri))
 y <- data_cook$log_price
 x <- log(data_cook$square_mt)
@@ -228,10 +240,6 @@ data_list <- list(
   y = y,
   x = x
 )
-
-# price_1 <- stan("2_code\2_R_code\stan_models\1_price_pooled.stan", iter = 500, chains = 1,
-#                 data = data_list, seed = 1)
-# price_1
 
 model_code <- "
 data {
@@ -252,7 +260,7 @@ model {
 model = stan_model(model_code = model_code)
 
 # Fit the model to the data
-fit <- sampling(model, data = data_list)
+fit <- sampling(model, data = data_list, chains = 2, iter =2000)
 
 
 print(fit)
@@ -283,3 +291,81 @@ ggplot(df_model) +
   geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
   facet_wrap(~ barri, ncol = 4) +
   theme(legend.position = "bottom")
+
+
+# price no pooled ---------------------------------------------------------
+
+data_list <- list(
+  N = N,
+  J = J,
+  y = y,
+  x = x,
+  barri = barri
+)
+
+# radon_2 <- stan("stan_models/radon_2_no_pooled_a.stan", iter = 1000, chains = 1,
+#                 data = data_list, seed = 1)
+
+model_code <- "
+data {
+  int<lower=0> N;
+  int<lower=0> J;
+  vector[N] y;
+  vector<lower=0>[N] x;
+  int barri[N];
+}
+parameters {
+  real a[J];
+  real b;              
+  real<lower=0> sigma_y;
+}
+model {
+  for (i in 1:N)
+    y[i] ~ normal(a[barri[i]] + b * x[i], sigma_y);
+}
+"
+
+# data {
+#   int<lower=0> N;
+#   vector[N] y;
+#   vector<lower=0>[N] x;
+# }
+# parameters {
+#   real a;
+#   real b;                           
+#   real<lower=0> sigma_y;
+# }
+# model {
+#   y ~ normal(a + b * x, sigma_y);
+# }
+
+model_2 = stan_model(model_code = model_code)
+
+# Fit the model to the data
+fit_2 <- sampling(model_2, data = data_list, chains = 1, iter =500)
+
+
+## Convergence analysis
+print(fit_2)
+plot(fit_2)
+
+price_summary <- tidy(fit_2, conf.int = T, level = 0.8, rhat = T, ess = T)
+
+df_no_pooled  <- tibble(
+  county = barri_name,
+  model = "no_pooled",
+  intercept = price_summary$estimate[1:J],
+  slope = price_summary$estimate[J+1]
+)
+
+df_model <- bind_rows(df_pooled, df_no_pooled) %>% 
+  left_join(data_cook, by = "barri") %>%
+  filter(barri %in% id_barrio) 
+
+ggplot(df_model) +
+  geom_jitter(aes(log(square_mt), log_price)) +
+  geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
+  facet_wrap(~ barri, ncol = 4) + 
+  scale_x_continuous(breaks = 0:1) + 
+  theme(legend.position = "bottom")
+
