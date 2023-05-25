@@ -4,9 +4,13 @@ library(car)
 
 getwd()
 
+date_of_data = "2023-05-03" # put the date of the file you want to aggregate
+
 wd = "C:/Users/ggari/Desktop/1_projects/TFM"
 
 setwd(wd)
+
+# date_of_data = "2023-04-20" # put the date of the file you want to clean
 
 path_functions = here(wd,"2_code","2_R_code","functions","data_mapping.R")
 
@@ -35,7 +39,9 @@ table_districte = data.frame(codi_districte = c(1:10),
 # Reading data ------------------------------------------------------------
 path_data_Ide = "1_data/2_data_Idealista"
 
-path_idealista = here(wd,path_data_Ide,"2_clean","idealista_data_clean_2.csv")
+path_csv_clean = paste0("data_idealista_clean_",date_of_data,".csv")
+
+path_idealista = here(wd,path_data_Ide,"2_clean",path_csv_clean)
 
 path_shp_barcelona = here(wd,"1_data","3_data_Barris_Barcelona","0301040100_Barris_ADM_ETRS89.shp")
 
@@ -161,18 +167,16 @@ dim(data_idealista)
 
 # to check the difference of length between the Idealista missing data for hospitals
 # and the id from hospitals data that have not equipment
-list_idealista = data_idealista %>% dplyr::filter(is.na(caps)) %>% select(id_barri) %>% unique() %>% array()
+list_idealista = data_idealista %>% dplyr::filter(is.na(caps)) %>% pull(id_barri) %>% unique()
 
-list_hospital = wider_type %>% ungroup() %>% select(addresses_neighborhood_id) %>%
-  array()
+list_hospital = wider_type %>% ungroup() %>% pull(addresses_neighborhood_id) 
 
 diff = base::setdiff(list_idealista,list_hospital)
 
 if(length(list_idealista) == length(diff)) {
   
   
-  print("The NA's are correct as those id neigbourhoods have not
-        equipment for hospitals data.")
+  print("The NA's are correct as those id neigbourhoods have not equipment for hospitals data.")
 } else{
   print("There are errors. Review the data.")
 }
@@ -259,7 +263,13 @@ data_idealista <- data_idealista %>% replace(is.na(.), 0)
 
 summary(data_idealista)
 
-saveRDS(data_idealista,file="C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_modelling.RDS")
+# Save document
+
+date_to_save <- str_extract(path_idealista, "\\d{4}-\\d{2}-\\d{2}")
+
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_modelling_",date_to_save)
+
+saveRDS(data_idealista,file=path_to_save)
 
 
 

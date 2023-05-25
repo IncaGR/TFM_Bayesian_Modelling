@@ -7,7 +7,11 @@ library(broom.mixed)
 
 # upload data ready for modelling ------------------------------------------
 
-data_idealista <- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista','data_modelling.RDS'))
+data_date = "2023-05-03"
+
+path_modelling = paste0("data_modelling_",data_date)
+
+data_idealista <- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista',path_modelling))
 
 # bar de copas
 
@@ -62,11 +66,13 @@ lm0 <- lm(reformulate("square_mt","log_price"),
 lm1 <- lm(reformulate("square_mt + rooms2","log_price"),
           data_idealista)
 
+lm2 <- lm(reformulate(regressors,"log_price"),
+          data_idealista)
+
 lm3 <- lm(reformulate("square_mt + asc","log_price"),
           data_idealista)
 
-lm2 <- lm(reformulate(regressors,"log_price"),
-          data_idealista)
+
 
 
 summary(lm0)
@@ -90,6 +96,7 @@ data_idealista$cookd = cooks.distance(lm2)
 
 
 dim(data_idealista[data_idealista$cookd>0.01,])
+dim(data_idealista[data_idealista$cookd>0.005,])
 
 plot(cooks.distance(lm2))
 abline(h = 4*mean(cooksd, na.rm=T), col="red") 
@@ -101,106 +108,120 @@ abline(h = 4*mean(cooksd, na.rm=T), col="red")
 
 # data_cook = data_idealista[data_idealista$cookd < 0.005,]
 # data_cook = data_idealista[data_idealista$cookd < 0.01,]
-test <- c(1479,2777,2825)
 
-data_cook = data_idealista[-test,]
-data_cook = data_cook[data_cook$cookd < 0.005,]
+# test <- c(1479,2777,2825)
+
+# data_cook = data_idealista[-test,]
+data_idealista[data_idealista$cookd>0.01,]
+
+data_cook = data_idealista[data_idealista$cookd < 0.01,]
 
 
 
 # lm3 <- lm(reformulate(regressors,"log_price"),
 #           data_cook)
 
-lm3 <- lm(reformulate("square_mt + asc + amueblado + aire + 
-                      estudio + rooms + wc2 + n_arbres_viaris_barri + cuaps
-                      ","log_price"),
-          data_cook)
+lm_cook <- lm(reformulate(regressors,"log_price"),
+              data_cook)
 
-summary(lm3)
+summary(lm_cook)
 
-# Extraño que con mas habitaciones menos precio, contra intuitivo.
-betas <- as.data.frame(dfbetas(lm3))
-
-summary(betas$rooms)
-
-betas %>%filter(rooms == min(rooms))
-
-colnames(betas) <- gsub(pattern = "[()]|[ ]","",colnames(betas))
-
-colnames(betas) <-  paste0(colnames(betas),'_beta')
-
-data_betas <- cbind(data_cook,betas)
-
-data_betas %>%filter(rooms_beta == min(rooms_beta)) 
-
-
-data_betas = data_betas %>%filter(!rooms_beta == min(rooms_beta)) 
-
-
-
-
-lm3 <- lm(reformulate("square_mt + asc + amueblado + aire + 
-                      estudio + rooms + wc2 + n_arbres_viaris_barri + cuaps
-                      ","log_price"),
-          data_betas)
-
-data_betas <- data_betas %>% select(- contains("_beta"))
-
-
-betas <- as.data.frame(dfbetas(lm3))
-
-
-betas %>%filter(rooms == min(rooms))
-
-colnames(betas) <- gsub(pattern = "[()]|[ ]","",colnames(betas))
-
-colnames(betas) <-  paste0(colnames(betas),'_beta')
-
-data_betas <- cbind(data_betas,betas)
-
-data_betas %>%filter(rooms_beta == min(rooms_beta)) 
-
-
-data_betas = data_betas %>%filter(!rooms_beta == min(rooms_beta)) 
-
-
-lm3 <- lm(reformulate("square_mt + asc + amueblado + aire + 
-                      estudio + rooms + wc2 + n_arbres_viaris_barri + cuaps
-                      ","log_price"),
-          data_betas)
-data_betas <- data_betas %>% select(- contains("_beta"))
-
-
-betas <- as.data.frame(dfbetas(lm3))
-
-
-betas %>%filter(rooms == min(rooms))
-
-
-colnames(betas) <- gsub(pattern = "[()]|[ ]","",colnames(betas))
-
-colnames(betas) <-  paste0(colnames(betas),'_beta')
-
-data_betas <- cbind(data_betas,betas)
-
-data_betas %>%filter(rooms_beta == min(rooms_beta)) 
-
-data_betas = data_betas %>%filter(!rooms_beta == min(rooms_beta)) 
-
-
-lm3 <- lm(reformulate("square_mt + asc + amueblado + aire + 
-                      estudio + rooms + wc2 + n_arbres_viaris_barri + cuaps
-                      ","log_price"),
-          data_betas)
-
-# con variables de open data sale max R2 .675
-# sin variables open data pero con la variable barrios en vez de distrito sale 0.69
-
-
-summary(lm3)
-vif(lm3)
-
-plot(lm3,ask=F)
+# # Extraño que con mas habitaciones menos precio, contra intuitivo.
+# betas <- as.data.frame(dfbetas(lm3))
+# 
+# summary(betas$rooms)
+# 
+# betas %>%filter(rooms == min(rooms))
+# 
+# test_row_name = row.names(betas %>%filter(rooms == min(rooms)))
+# 
+# tmp =data_cook %>% filter(rownames(data_cook) != test_row_name)
+# 
+# lm3 <- lm(reformulate("square_mt + asc + amueblado + aire + 
+#                       estudio + rooms + wc2 + n_arbres_viaris_barri + cuaps
+#                       ","log_price"),
+#           tmp)
+# 
+# summary(lm3)
+# 
+# 
+# 
+# colnames(betas) <- gsub(pattern = "[()]|[ ]","",colnames(betas))
+# 
+# colnames(betas) <-  paste0(colnames(betas),'_beta')
+# 
+# data_betas <- cbind(data_cook,betas)
+# 
+# data_betas %>%filter(rooms_beta == min(rooms_beta)) 
+# 
+# 
+# data_betas = data_betas %>%filter(!rooms_beta == min(rooms_beta)) 
+# 
+# 
+# 
+# 
+# lm3 <- lm(reformulate("square_mt + asc + amueblado + aire + 
+#                       estudio + rooms + wc2 + n_arbres_viaris_barri + cuaps
+#                       ","log_price"),
+#           data_betas)
+# 
+# data_betas <- data_betas %>% select(- contains("_beta"))
+# 
+# 
+# betas <- as.data.frame(dfbetas(lm3))
+# 
+# 
+# betas %>%filter(rooms == min(rooms))
+# 
+# colnames(betas) <- gsub(pattern = "[()]|[ ]","",colnames(betas))
+# 
+# colnames(betas) <-  paste0(colnames(betas),'_beta')
+# 
+# data_betas <- cbind(data_betas,betas)
+# 
+# data_betas %>%filter(rooms_beta == min(rooms_beta)) 
+# 
+# 
+# data_betas = data_betas %>%filter(!rooms_beta == min(rooms_beta)) 
+# 
+# 
+# lm3 <- lm(reformulate("square_mt + asc + amueblado + aire + 
+#                       estudio + rooms + wc2 + n_arbres_viaris_barri + cuaps
+#                       ","log_price"),
+#           data_betas)
+# data_betas <- data_betas %>% select(- contains("_beta"))
+# 
+# 
+# betas <- as.data.frame(dfbetas(lm3))
+# 
+# 
+# betas %>%filter(rooms == min(rooms))
+# 
+# 
+# colnames(betas) <- gsub(pattern = "[()]|[ ]","",colnames(betas))
+# 
+# colnames(betas) <-  paste0(colnames(betas),'_beta')
+# 
+# data_betas <- cbind(data_betas,betas)
+# 
+# data_betas %>%filter(rooms_beta == min(rooms_beta)) 
+# 
+# data_betas = data_betas %>%filter(!rooms_beta == min(rooms_beta)) 
+# 
+# 
+# lm3 <- lm(reformulate("square_mt + asc + amueblado + aire + 
+#                       estudio + rooms + wc2 + n_arbres_viaris_barri + cuaps
+#                       ","log_price"),
+#           data_betas)
+# 
+# # con variables de open data sale max R2 .675
+# # sin variables open data pero con la variable barrios en vez de distrito sale 0.69
+# 
+# 
+# summary(lm3)
+# vif(lm3)
+# 
+# plot(lm3,ask=F)
 
 
 # some outliers, now the plots are better
@@ -277,20 +298,30 @@ df_pooled  <- tibble(
   slope = price_summary$estimate[2]
 )
 
-id_barrio<- c("la Guineueta",
-               "la Vall d'Hebron", "Canyelles", "la Trinitat Nova", "el Raval", "la Dreta de l'Eixample", "el Barri Gòtic",
-               "Sants")
+# 
+# id_barrio<- c("la Guineueta",
+#                "la Vall d'Hebron", "Canyelles", "la Trinitat Nova", "el Raval", "la Dreta de l'Eixample", "el Barri Gòtic",
+#                "Sants")
 
 
 df_model <- df_pooled %>%
-  left_join(data_cook, by = "barri") %>%
-  filter(barri %in% id_barrio)
+  left_join(data_cook, by = "barri") 
+# %>%
+#   filter(barri %in% id_barrio)
 
-ggplot(df_model) +
-  geom_point(aes(log(square_mt), log_price)) +
-  geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
-  facet_wrap(~ barri, ncol = 4) +
-  theme(legend.position = "bottom")
+# ggplot(df_model) +
+#   geom_point(aes(log(square_mt), log_price)) +
+#   geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
+#   facet_wrap(~ barri, ncol = 4) +
+#   theme(legend.position = "bottom")
+
+# Save document
+
+date_to_save <- str_extract(path_modelling, "\\d{4}-\\d{2}-\\d{2}")
+
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_modeled_pooled_",date_to_save)
+
+saveRDS(df_model,file=path_to_save)
 
 
 # price no pooled ---------------------------------------------------------
@@ -342,7 +373,7 @@ model {
 model_2 = stan_model(model_code = model_code)
 
 # Fit the model to the data
-fit_2 <- sampling(model_2, data = data_list, chains = 1, iter =500)
+fit_2 <- sampling(model_2, data = data_list, chains = 1, iter =100)
 
 
 ## Convergence analysis
