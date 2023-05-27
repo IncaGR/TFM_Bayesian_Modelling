@@ -112,16 +112,6 @@ ggplot(df_model) +
 
 # model no pooled ---------------------------------------------------------
 
-
-# 
-# remove.packages("rstan")
-
-
-
-# data_pooled <-
-# sample_poolded_df = slice_sample(data_pooled,n = 300)
-# sample_poolded_df$barri <- as.factor(sample_poolded_df$barri)
-
 N= nrow(data_cook)
 barri_name <- unique(data_cook$barri)
 barri <- as.integer((data_cook$barri))
@@ -163,36 +153,13 @@ model {
 
 "
 
-# data {
-#   int<lower=0> N;
-#   vector[N] y;
-#   vector<lower=0>[N] x;
-# }
-# parameters {
-#   real a;
-#   real b;                           
-#   real<lower=0> sigma_y;
-# }
-# model {
-#   y ~ normal(a + b * x, sigma_y);
-# }
-
-# model_2 = stan_model(model_code = model_code)
-# 
-# # Fit the model to the data
-# tempdir()
-# fit_2 <- sampling(model_2, data = data_list, chains = 1, iter =100)
-# 
-# ## Convergence analysis
-# print(fit_2)
-# plot(fit_2)
 
 translate = stanc(model_code  = model_code)
 
 model = stan_model(stanc_ret = translate)
 
 # Fit the model to the data
-fit <- sampling(model, data = data_list, chains = 4, iter =500, verbose = TRUE)
+fit <- sampling(model, data = data_list, chains = 4, iter =2000, verbose = TRUE) # 4000?
 
 # fit <- stan(model_code = model_code, model_name = "no pooled", data = data_list,
 #             iter = 50, chains = 1, verbose = TRUE)
