@@ -90,15 +90,15 @@ id_barrio<- c("la Guineueta",
                "Sants")
 
 
-df_model <- df_pooled %>%
-  left_join(data_cook, by = "barri") %>%
-  filter(barri %in% id_barrio)
-
-ggplot(df_model) +
-  geom_point(aes(log(square_mt), log_price)) +
-  geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
-  facet_wrap(~ barri, ncol = 4) +
-  theme(legend.position = "bottom")
+# df_model <- df_pooled %>%
+#   left_join(data_cook, by = "barri") %>%
+#   filter(barri %in% id_barrio)
+# 
+# ggplot(df_model) +
+#   geom_point(aes(log(square_mt), log_price)) +
+#   geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
+#   facet_wrap(~ barri, ncol = 4) +
+#   theme(legend.position = "bottom")
 
 # Save document
 
@@ -118,9 +118,6 @@ barri <- as.integer((data_cook$barri))
 J <- length(unique(barri))
 y <- data_cook$log_price
 x <- log(data_cook$square_mt)
-
-
-# price no pooled ---------------------------------------------------------
 
 data_list <- list(
   N = N,
@@ -182,8 +179,86 @@ id_barrio<- c("la Guineueta",
                "la Vall d'Hebron", "Canyelles", "la Trinitat Nova", "el Raval", "la Dreta de l'Eixample", "el Barri Gòtic",
                "Sants")
 
-df_model <- bind_rows(df_pooled, df_no_pooled) %>%
-# df_model <- df_no_pooled %>% 
+# df_model <- bind_rows(df_pooled, df_no_pooled) %>%
+# # df_model <- df_no_pooled %>% 
+#   left_join(data_cook, by = "barri") %>%
+#   filter(barri %in% id_barrio) 
+
+# ggplot(df_model) +
+#   geom_jitter(aes(log(square_mt), log_price)) +
+#   geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
+#   facet_wrap(~ barri, ncol = 4) + 
+#   scale_x_continuous(breaks = 0:1) + 
+#   theme(legend.position = "bottom")
+
+
+# hierarchycal model  -----------------------------------------------------
+
+
+N= nrow(data_cook)
+barri_name <- unique(data_cook$barri)
+barri <- as.integer((data_cook$barri))
+J <- length(unique(barri))
+y <- data_cook$log_price
+x <- log(data_cook$square_mt)
+
+data_list <- list(
+  N = N,
+  J = J,
+  y = y,
+  x = x,
+  barri = barri
+)
+
+model_code <- "
+data {
+  int<lower=0> N;
+  int<lower=0> J;
+  vector[N] y;
+  real x[N];
+  int barri[N];
+}
+parameters {
+  real a[J];
+  real b;                           
+  real mu_a;
+  real<lower=0> sigma_y;
+  real<lower=0> sigma_a;
+}
+model {
+  a ~ normal(mu_a, sigma_a);            
+  for (n in 1:N)
+    y[n] ~ normal(a[barri[n]] + b * x[n], sigma_y);
+}
+"
+
+
+translate = stanc(model_code  = model_code)
+
+model = stan_model(stanc_ret = translate)
+
+# Fit the model to the data
+fit <- sampling(model, data = data_list, chains = 4, iter =2000, verbose = TRUE) # 4000?
+
+# fit <- stan(model_code = model_code, model_name = "no pooled", data = data_list,
+#             iter = 50, chains = 1, verbose = TRUE)
+
+# 
+# ## Convergence analysis
+print(fit)
+plot(fit)
+
+price_summary <- tidy(fit, conf.int = T, level = 0.8, rhat = T, ess = T)
+
+df_multilevel  <- tibble(
+  barri = barri_name,
+  model = "multilevel",
+  intercept = price_summary$estimate[1:J],
+  slope = price_summary$estimate[J+1]
+)
+
+# df_model <- bind_rows(df_pooled, df_no_pooled, df_multilevel) %>% 
+df_model <- bind_rows(df_multilevel) %>%
   left_join(data_cook, by = "barri") %>%
   filter(barri %in% id_barrio) 
 
@@ -194,7 +269,7 @@ ggplot(df_model) +
   scale_x_continuous(breaks = 0:1) + 
   theme(legend.position = "bottom")
 
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_fitted_hier")
 
-# hierarchycal model  -----------------------------------------------------
 
-
+saveRDS(fit, path_to_save)
