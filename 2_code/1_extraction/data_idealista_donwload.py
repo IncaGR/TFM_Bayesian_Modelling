@@ -11,7 +11,7 @@ import re
 from datetime import date
 import os
 
-from scrapping_function.scrapping_functions import *
+from Idealista_scrapping.scrapping_functions import *
 
 # headers -> Ctrl + shift + i (pagina de desarrollador) -> network Ctrl + f5 -> primera pestaña -> request headers
 # desde "accept" ponerlo en dict 
@@ -46,6 +46,6 @@ parent_path = 'C:\\Users\\ggari\\Desktop\\1_projects\\TFM'
 data_idealista_path = 'C:\\Users\\ggari\\Desktop\\1_projects\\TFM\\1_data\\2_data_Idealista\\1_raw'
 
 
-call_scrapper(cp,data_idealista_path)
+#call_scrapper(cp,data_idealista_path)
 
 concat_csv(data_idealista_path,folder="extraction_2023-05-30")
