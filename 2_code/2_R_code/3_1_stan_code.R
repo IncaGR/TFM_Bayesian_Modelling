@@ -9,7 +9,7 @@ library(bayesplot)
 
 # upload data ready for modelling ------------------------------------------
 options(mc.cores = parallel::detectCores())
-rstan_options( auto_write=TRUE )
+rstan_options(auto_write=TRUE )
 
 
 # install.packages("https://cran.r-project.org/src/contrib/Archive/StanHeaders/StanHeaders_2.21.0-7.tar.gz",
@@ -67,48 +67,18 @@ model {
 model = stan_model(model_code = model_code)
 
 # Fit the model to the data
-fit <- sampling(model, data = data_list, chains = 2, iter =2000)
+fit_pooled <- sampling(model, data = data_list, chains = 2, iter =2000)
 
 
-print(fit)
-plot(fit)
+print(fit_pooled)
+plot(fit_pooled)
 
 
+# Save pooled model -------------------------------------------------------
 
-price_summary <- tidy(fit, conf.int = T, level = 0.8, rhat = T, ess = T)
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_pooled.RDS")
 
-df_pooled  <- tibble(
-  barri = barri_name,
-  model = "pooled",
-  intercept = price_summary$estimate[1],
-  slope = price_summary$estimate[2]
-)
-
-
-id_barrio<- c("la Guineueta",
-               "la Vall d'Hebron", "Canyelles", "la Trinitat Nova", "el Raval", "la Dreta de l'Eixample", "el Barri Gòtic",
-               "Sants")
-
-
-# df_model <- df_pooled %>%
-#   left_join(data_cook, by = "barri") %>%
-#   filter(barri %in% id_barrio)
-# 
-# ggplot(df_model) +
-#   geom_point(aes(log(square_mt), log_price)) +
-#   geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
-#   facet_wrap(~ barri, ncol = 4) +
-#   theme(legend.position = "bottom")
-
-# Save document
-
-# date_to_save <- str_extract(path_modelling, "\\d{4}-\\d{2}-\\d{2}")
-# 
-# path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_modeled_pooled_",date_to_save)
-# 
-# saveRDS(df_model,file=path_to_save)
-
-
+saveRDS(fit_pooled, path_to_save)
 
 # model no pooled ---------------------------------------------------------
 
@@ -156,41 +126,23 @@ translate = stanc(model_code  = model_code)
 model = stan_model(stanc_ret = translate)
 
 # Fit the model to the data
-fit <- sampling(model, data = data_list, chains = 4, iter =2000, verbose = TRUE) # 4000?
+fit_no_pooled <- sampling(model, data = data_list, chains = 4, iter =2000, verbose = TRUE) # 4000?
 
 # fit <- stan(model_code = model_code, model_name = "no pooled", data = data_list,
 #             iter = 50, chains = 1, verbose = TRUE)
 
 # 
 # ## Convergence analysis
-print(fit)
-plot(fit)
+print(fit_no_pooled)
+plot(fit_no_pooled)
 
-price_summary <- tidy(fit, conf.int = T, level = 0.8, rhat = T, ess = T)
+mcmc_trace(fit_no_pooled)
 
-df_no_pooled  <- tibble(
-  barri = barri_name,
-  model = "no_pooled",
-  intercept = price_summary$estimate[1:J],
-  slope = price_summary$estimate[J+1]
-)
+# Save no pooled model ----------------------------------------------------
 
-id_barrio<- c("la Guineueta",
-               "la Vall d'Hebron", "Canyelles", "la Trinitat Nova", "el Raval", "la Dreta de l'Eixample", "el Barri Gòtic",
-               "Sants")
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_no_pooled.RDS")
 
-# df_model <- bind_rows(df_pooled, df_no_pooled) %>%
-# # df_model <- df_no_pooled %>% 
-#   left_join(data_cook, by = "barri") %>%
-#   filter(barri %in% id_barrio) 
-
-# ggplot(df_model) +
-#   geom_jitter(aes(log(square_mt), log_price)) +
-#   geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
-#   facet_wrap(~ barri, ncol = 4) + 
-#   scale_x_continuous(breaks = 0:1) + 
-#   theme(legend.position = "bottom")
-
+saveRDS(fit_no_pooled, path_to_save)
 
 # hierarchycal model  -----------------------------------------------------
 
@@ -238,38 +190,20 @@ translate = stanc(model_code  = model_code)
 model = stan_model(stanc_ret = translate)
 
 # Fit the model to the data
-fit <- sampling(model, data = data_list, chains = 4, iter =2000, verbose = TRUE) # 4000?
+fit_hier <- sampling(model, data = data_list, chains = 4, iter =2000, verbose = TRUE) # 4000?
 
 # fit <- stan(model_code = model_code, model_name = "no pooled", data = data_list,
 #             iter = 50, chains = 1, verbose = TRUE)
 
 # 
 # ## Convergence analysis
-print(fit)
-plot(fit)
-
-price_summary <- tidy(fit, conf.int = T, level = 0.8, rhat = T, ess = T)
-
-df_multilevel  <- tibble(
-  barri = barri_name,
-  model = "multilevel",
-  intercept = price_summary$estimate[1:J],
-  slope = price_summary$estimate[J+1]
-)
-
-# df_model <- bind_rows(df_pooled, df_no_pooled, df_multilevel) %>% 
-df_model <- bind_rows(df_multilevel) %>%
-  left_join(data_cook, by = "barri") %>%
-  filter(barri %in% id_barrio) 
-
-ggplot(df_model) +
-  geom_jitter(aes(log(square_mt), log_price)) +
-  geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
-  facet_wrap(~ barri, ncol = 4) + 
-  scale_x_continuous(breaks = 0:1) + 
-  theme(legend.position = "bottom")
-
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_fitted_hier")
+print(fit_hier)
+plot(fit_hier)
 
 
-saveRDS(fit, path_to_save)
+# Save hierarchical model -------------------------------------------------
+
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_hierarchical.RDS")
+
+
+saveRDS(fit_hier, path_to_save)
