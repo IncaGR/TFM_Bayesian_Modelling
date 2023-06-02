@@ -1,7 +1,10 @@
 
+library(tidyverse)
+library(broom.mixed)
+
 # 4. Visualization --------------------------------------------------------
 
-data_idealista <- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista','data_modelling.RDS'))
+data_idealista <- readRDS(here::here('1_data','2_data_Idealista','data_modelling_2023-05-03.RDS'))
 
 colnames(data_idealista)
 
@@ -45,4 +48,107 @@ ggplot(data_idealista) +
 
 
 
+# bayes models viz --------------------------------------------------------
+
+# data cleaned using cook distance
+
+data_date = "2023-05-03"
+
+path_modelling = paste0("data_lm_cook_",data_date,".RDS")
+
+data_cook<- readRDS(here::here('1_data','2_data_Idealista',path_modelling))
+
+data_cook$barri <- as.factor(data_cook$barri)
+
+
+N= nrow(data_cook)
+barri_name <- unique(data_cook$barri)
+barri <- as.integer((data_cook$barri))
+J <- length(unique(barri))
+y <- data_cook$log_price
+x <- log(data_cook$square_mt)
+
+
+# data pooled
+
+fit_pooled <- readRDS(here::here('1_data','2_data_Idealista','3_fitted_data','model_pooled.RDS'))
+
+price_summary_pooled <- tidy(fit_pooled, conf.int = T, level = 0.8, rhat = T, ess = T)
+
+df_pooled  <- tibble(
+  barri = barri_name,
+  model = "pooled",
+  intercept = price_summary_pooled$estimate[1],
+  slope = price_summary_pooled$estimate[2]
+)
+
+
+id_barrio<- c("la Guineueta",
+               "la Vall d'Hebron", "Canyelles", "la Trinitat Nova", "el Raval", "la Dreta de l'Eixample", "el Barri Gòtic",
+               "Sants")
+
+
+df_model <- df_pooled %>%
+  left_join(data_cook, by = "barri") %>%
+  filter(barri %in% id_barrio)
+
+ggplot(df_model) +
+  geom_point(aes(log(square_mt), log_price)) +
+  geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
+  facet_wrap(~ barri, ncol = 4) +
+  theme(legend.position = "bottom")
+
+# data no pooled
+
+fit_no_pooled <- readRDS(here::here('1_data','2_data_Idealista','3_fitted_data','model_no_pooled.RDS'))
+
+price_summary_no_pooled <- tidy(fit_no_pooled, conf.int = T, level = 0.8, rhat = T, ess = T)
+
+df_no_pooled  <- tibble(
+  barri = barri_name,
+  model = "no_pooled",
+  intercept = price_summary_no_pooled$estimate[1:J],
+  slope = price_summary_no_pooled$estimate[J+1]
+)
+
+id_barrio<- c("la Guineueta",
+               "la Vall d'Hebron", "Canyelles", "la Trinitat Nova", "el Raval", "la Dreta de l'Eixample", "el Barri Gòtic",
+               "Sants")
+
+df_model <- bind_rows(df_pooled, df_no_pooled) %>%
+# df_model <- df_no_pooled %>%
+  left_join(data_cook, by = "barri") %>%
+  filter(barri %in% id_barrio)
+
+ggplot(df_model) +
+  geom_jitter(aes(log(square_mt), log_price)) +
+  geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
+  facet_wrap(~ barri, ncol = 4) +
+  scale_x_continuous(breaks = 0:1) +
+  theme(legend.position = "bottom")
+
+# data hierarchical
+
+fit_hier <- readRDS(here::here('1_data','2_data_Idealista','3_fitted_data','model_fitted_hier.RDS'))
+
+price_summary_hier <- tidy(fit_hier, conf.int = T, level = 0.8, rhat = T, ess = T)
+
+df_multilevel  <- tibble(
+  barri = barri_name,
+  model = "multilevel",
+  intercept = price_summary_hier$estimate[1:J],
+  slope = price_summary_hier$estimate[J+1]
+)
+
+df_model <- bind_rows(df_pooled, df_no_pooled, df_multilevel) %>%
+# df_model <- bind_rows(df_multilevel) %>%
+  left_join(data_cook, by = "barri") %>%
+  filter(barri %in% id_barrio)
+
+ggplot(df_model) +
+  geom_jitter(aes(log(square_mt), log_price)) +
+  geom_abline(aes(intercept = intercept, slope = slope, color = model)) +
+  facet_wrap(~ barri, ncol = 4) +
+  scale_x_continuous(breaks = 0:1) +
+  theme(legend.position = "bottom")
 
