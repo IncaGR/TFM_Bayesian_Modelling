@@ -113,10 +113,10 @@ def obtain_data_from_ids(ids, headers, cp):
     x=1
     
     for i in ids:
-        print("aqui entra en el bucle")
+#        print("aqui entra en el bucle")
         with requests.Session() as session:
             try:
-                print("aqui esta en el try")
+#               print("aqui esta en el try")
                 r = session.get(url.format(i), headers=headers)
                 r.raise_for_status()
 
@@ -320,7 +320,7 @@ def chunk(lst, n):
 # In[15]:
 
 
-def call_scrapper(cp_list,parent_path):
+def call_scrapper(cp_list,parent_path): # poner headers aqui
     
     print("parent directory: ",os.getcwd())
     
