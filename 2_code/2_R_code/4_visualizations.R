@@ -22,6 +22,8 @@ N <- nrow(data_idealista)
 barri <- as.numeric(data_idealista$id_barri)
 barri_name <- unique(data_idealista$barri)
 
+barri_name
+
 # Data visualization
 price_barri <- data_idealista %>%
   group_by(barri) %>%
@@ -52,6 +54,10 @@ ggplot(data_idealista) +
 
 # data cleaned using cook distance
 
+
+# POOLED ------------------------------------------------------------------
+
+
 data_date = "2023-05-03"
 
 path_modelling = paste0("data_lm_cook_",data_date,".RDS")
@@ -68,7 +74,7 @@ J <- length(unique(barri))
 y <- data_cook$log_price
 x <- log(data_cook$square_mt)
 
-
+id_barrio <- as.character(sample(barri_name,10))
 # data pooled
 
 fit_pooled <- readRDS(here::here('1_data','2_data_Idealista','3_fitted_data','model_pooled.RDS'))
@@ -83,9 +89,9 @@ df_pooled  <- tibble(
 )
 
 
-id_barrio<- c("la Guineueta",
-               "la Vall d'Hebron", "Canyelles", "la Trinitat Nova", "el Raval", "la Dreta de l'Eixample", "el Barri Gòtic",
-               "Sants")
+# id_barrio<- c("la Guineueta",
+#                "la Vall d'Hebron", "Canyelles", "la Trinitat Nova", "el Raval", "la Dreta de l'Eixample", "el Barri Gòtic",
+#                "Sants")
 
 
 df_model <- df_pooled %>%
@@ -111,9 +117,9 @@ df_no_pooled  <- tibble(
   slope = price_summary_no_pooled$estimate[J+1]
 )
 
-id_barrio<- c("la Guineueta",
-               "la Vall d'Hebron", "Canyelles", "la Trinitat Nova", "el Raval", "la Dreta de l'Eixample", "el Barri Gòtic",
-               "Sants")
+# id_barrio<- c("la Guineueta",
+#                "la Vall d'Hebron", "Canyelles", "la Trinitat Nova", "el Raval", "la Dreta de l'Eixample", "el Barri Gòtic",
+#                "Sants")
 
 df_model <- bind_rows(df_pooled, df_no_pooled) %>%
 # df_model <- df_no_pooled %>%
