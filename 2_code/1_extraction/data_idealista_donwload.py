@@ -46,6 +46,8 @@ parent_path = 'C:\\Users\\ggari\\Desktop\\1_projects\\TFM'
 data_idealista_path = 'C:\\Users\\ggari\\Desktop\\1_projects\\TFM\\1_data\\2_data_Idealista\\1_raw'
 
 
-#call_scrapper(cp,data_idealista_path)
+call_scrapper(cp,data_idealista_path)
 
-concat_csv(data_idealista_path,folder="extraction_2023-05-30")
+concat_csv(data_idealista_path,folder="extraction_2023-06-18")
+
+

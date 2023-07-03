@@ -105,7 +105,8 @@ data_idealista = data_idealista %>%
 # unique(pisos_2$wc)
 
 data_idealista = data_idealista %>%
-  dplyr::mutate(wc2 = ifelse(wc >= 3, "3 or more", wc),
+  dplyr::mutate(wc2 = ifelse(wc >= 4, "4 o mas", wc),
+                wc2 = ifelse(wc == 3, "3 ", wc2),
                 wc2 = ifelse(wc == 2, "2", wc2),
                 wc2 = ifelse(wc == 1, "1", wc2)
   )
@@ -144,6 +145,15 @@ data_idealista = data_idealista %>%
 
 ggplot(data_idealista,aes(square_mt,price, col = distrito2)) + 
   geom_jitter()
+
+# adding planta
+
+ggplot(data_idealista,aes(planta)) + geom_bar()
+
+# data_idealista$new_planta <- as.numeric(stringr::str_extract(data_idealista$planta,"\\d+"))
+
+data_idealista = data_idealista %>% mutate(flag_planta = ifelse(planta=="0",1,0),
+                          new_planta = ifelse(planta=="bajo",0,as.numeric(stringr::str_extract(planta,"\\d+")))) # imputted when scrapping
 
 
 # Extract date using regular expression

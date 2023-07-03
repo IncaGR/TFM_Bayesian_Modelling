@@ -267,9 +267,9 @@ summary(data_idealista)
 
 date_to_save <- str_extract(path_idealista, "\\d{4}-\\d{2}-\\d{2}")
 
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_modelling_",date_to_save)
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_modelling_",date_to_save,".RDS")
 
 saveRDS(data_idealista,file=path_to_save)
 
-
+print(path_to_save)
 

@@ -21,7 +21,7 @@ packageVersion("rstan")
 
 data_date = "2023-05-03"
 
-path_modelling = paste0("data_lm_cook_",data_date)
+path_modelling = paste0("data_lm_cook_",data_date,".RDS")
 
 data_cook<- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista',path_modelling))
 
@@ -31,49 +31,55 @@ data_cook$barri <- as.factor(data_cook$barri)
 # price_pooled ------------------------------------------------------------
 
 N= nrow(data_cook)
-barri <- as.numeric(data_cook$id_barri)
 barri_name <- unique(data_cook$barri)
+barri <- as.numeric(data_cook$barri)
 J <- length(unique(barri))
 y <- data_cook$log_price
-x <- log(data_cook$square_mt)
-# u <- radon %>% 
-#   group_by(county) %>% 
-#   summarise(u = first(log_uranium)) %>% 
-#   pull(u) # because is value per county 
+x1 <- log(data_cook$square_mt)
+x2 <- data_cook$rooms
+
 
 
 data_list <- list(
   N = N,
   y = y,
-  x = x
+  x1 = x1,
+  x2 = x2
 )
 
 model_code <- "
 data {
   int<lower=0> N;
   vector[N] y;
-  vector<lower=0>[N] x;
+  vector<lower=0>[N] x1;
+  vector<lower=0>[N] x2;
 }
 parameters {
   real a;
-  real b;                           
+  real b;
+  real c;
   real<lower=0> sigma_y;
 }
 model {
-  y ~ normal(a + b * x, sigma_y);
+  y ~ normal(a + b * x1 + c * x2, sigma_y);
 }
 "
+
+# util <- new.env()
 
 model = stan_model(model_code = model_code)
 
 # Fit the model to the data
 fit_pooled <- sampling(model, data = data_list, chains = 2, iter =2000)
 
+check_divergences(fit_pooled)
+check_hmc_diagnostics(fit_pooled)
 
 print(fit_pooled)
 plot(fit_pooled)
 
-
+mcmc_acf(fit_pooled)
+traceplot(fit_pooled)
 # Save pooled model -------------------------------------------------------
 
 path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_pooled.RDS")
@@ -87,13 +93,15 @@ barri_name <- unique(data_cook$barri)
 barri <- as.integer((data_cook$barri))
 J <- length(unique(barri))
 y <- data_cook$log_price
-x <- log(data_cook$square_mt)
+x1 <- log(data_cook$square_mt)
+x2 <- data_cook$rooms
 
 data_list <- list(
   N = N,
   J = J,
   y = y,
-  x = x,
+  x1 = x1,
+  x2 = x2,
   barri = barri
 )
 
@@ -105,19 +113,20 @@ data {
   int<lower=0> N;
   int<lower=0> J;
   vector[N] y;
-  real x[N];
+  real x1[N];
+  int x2[N];
   int barri[N];
 }
 parameters {
   real a[J];
-  real b;              
+  real b;
+  real c;
   real<lower=0> sigma_y;
 }
 model {
   for (i in 1:N)
-    y[i] ~ normal(a[barri[i]] + b * x[i], sigma_y);
+    y[i] ~ normal(a[barri[i]] + b * x1[i] + c * x2[i], sigma_y);
 }
-
 "
 
 
@@ -126,7 +135,7 @@ translate = stanc(model_code  = model_code)
 model = stan_model(stanc_ret = translate)
 
 # Fit the model to the data
-fit_no_pooled <- sampling(model, data = data_list, chains = 4, iter =2000, verbose = TRUE) # 4000?
+fit_no_pooled <- sampling(model, data = data_list, chains = 4, iter =4000, verbose = TRUE) # 4000?
 
 # fit <- stan(model_code = model_code, model_name = "no pooled", data = data_list,
 #             iter = 50, chains = 1, verbose = TRUE)
@@ -152,13 +161,15 @@ barri_name <- unique(data_cook$barri)
 barri <- as.integer((data_cook$barri))
 J <- length(unique(barri))
 y <- data_cook$log_price
-x <- log(data_cook$square_mt)
+x1 <- log(data_cook$square_mt)
+x2 <- data_cook$rooms
 
 data_list <- list(
   N = N,
   J = J,
   y = y,
-  x = x,
+  x1 = x1,
+  x2 = x2,
   barri = barri
 )
 
@@ -167,12 +178,14 @@ data {
   int<lower=0> N;
   int<lower=0> J;
   vector[N] y;
-  real x[N];
+  real x1[N];
+  int x2[N];
   int barri[N];
 }
 parameters {
   real a[J];
-  real b;                           
+  real b;
+  real c;
   real mu_a;
   real<lower=0> sigma_y;
   real<lower=0> sigma_a;
@@ -180,7 +193,7 @@ parameters {
 model {
   a ~ normal(mu_a, sigma_a);            
   for (n in 1:N)
-    y[n] ~ normal(a[barri[n]] + b * x[n], sigma_y);
+    y[n] ~ normal(a[barri[n]] + b * x1[n] + c * x2[N], sigma_y);
 }
 "
 
@@ -190,7 +203,7 @@ translate = stanc(model_code  = model_code)
 model = stan_model(stanc_ret = translate)
 
 # Fit the model to the data
-fit_hier <- sampling(model, data = data_list, chains = 4, iter =2000, verbose = TRUE) # 4000?
+fit_hier <- sampling(model, data = data_list, chains = 4, iter =5000, verbose = TRUE,seed = 1568) # 4000?
 
 # fit <- stan(model_code = model_code, model_name = "no pooled", data = data_list,
 #             iter = 50, chains = 1, verbose = TRUE)

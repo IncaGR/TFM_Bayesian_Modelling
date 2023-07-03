@@ -9,9 +9,13 @@ library(broom.mixed)
 
 data_date = "2023-05-03"
 
-path_modelling = paste0("data_modelling_",data_date)
+path_modelling = paste0("data_modelling_",data_date,".RDS")
 
 data_idealista <- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista',path_modelling))
+
+data_idealista$rooms2 <- as.factor(data_idealista$rooms2)
+
+# data_idealista$rooms_ord <- factor(data_idealista$rooms2,ordered = T) 
 
 # bar de copas
 
@@ -20,19 +24,20 @@ regressors<-c(
   "distrito2",
   "terraza",
   # "balcon",
-  "estado" ,
+  # "estado" ,
   # "armarios",
   # "cocina",
   "amueblado",                  
   # "planta",
   # "calef",
   "asc",
-  "aire",
+  # "aire",
   "exterior",                                    
   # "casa",
   "estudio",                    
   "wc2",
   "rooms2",
+  # "rooms_ord",
   # # "terraza_balcon",
   # "n_hospitals_barri",
   # # "n_hospitals_districte",
@@ -50,7 +55,9 @@ regressors<-c(
   # # "n_arbres_viaris_districte",
   "n_bar_copas_barri",
   # # "n_bar_copas_districte",
-  "square_mt"
+  "square_mt",
+  "new_planta",
+  "flag_planta"
 )
 
 # data_idealista[is.na(data_idealista$n_c_comercials),]$n_c_comercials <- 0
@@ -63,8 +70,14 @@ regressors<-c(
 lm0 <- lm(reformulate("square_mt","log_price"),
           data_idealista)
 
+lm1 <- lm(reformulate("square_mt + rooms","log_price"),
+          data_idealista)
+
 lm1 <- lm(reformulate("square_mt + rooms2","log_price"),
           data_idealista)
+
+# lm1 <- lm(reformulate("square_mt + rooms_ord","log_price",intercept = F),
+#           data_idealista)
 
 lm2 <- lm(reformulate(regressors,"log_price"),
           data_idealista)
@@ -72,6 +85,51 @@ lm2 <- lm(reformulate(regressors,"log_price"),
 lm3 <- lm(reformulate("square_mt + asc","log_price"),
           data_idealista)
 
+lm4 <- lm(reformulate("square_mt + asc + rooms2","log_price"),
+          data_idealista)
+
+df_x = data_idealista
+# df_x = data_idealista %>% filter(flag_planta == 0)
+
+# df_x$new_planta = as.factor(df_x$new_planta)
+df_x$new_planta = as.numeric(df_x$new_planta)
+
+lm5 <- lm(reformulate("square_mt + asc + rooms2 + new_planta + flag_planta ","log_price"),
+          df_x)
+
+
+# lm6 <- lm(reformulate("square_mt + asc + rooms2 + new_planta + flag_planta + asc*new_planta","log_price"),
+#           df_x)
+
+df_x = df_x %>%
+  dplyr::mutate(wcx = ifelse(wc >= 4, "4 o mas", wc),
+                wcx = ifelse(wc == 3, "3", wcx),
+                wcx = ifelse(wc == 2, "2", wcx),
+                wcx = ifelse(wc == 1, "1", wcx)
+  )
+
+lm6 <- lm(reformulate("square_mt + asc + rooms2 + new_planta + flag_planta + wcx","log_price"),
+          df_x)
+round((exp(coef(lm6))-1)*100,2)
+
+
+df_x %>% filter(wc >5)
+
+df_x = df_x %>% filter(!(rooms > 4 & square_mt <100)) # some strange
+df_x %>% filter((rooms > 4 & square_mt <100))
+
+n_barri = df_x %>% group_by(barri) %>% count() %>% arrange(n) %>% ungroup()
+
+df_x = df_x %>% left_join(n_barri,by=join_by(barri)) %>% filter(n >10)
+
+df_x$n_arbres_viaris_barri = as.factor(df_x$n_arbres_viaris_barri) 
+
+df_x = df_x %>% mutate(n_arbres_viaris_barri = ifelse(barri == "el Coll",0,n_arbres_viaris_barri))
+
+lm7 <- lm(reformulate("barri + square_mt + asc + rooms + new_planta + flag_planta + wcx + estudio + terraza + exterior + amueblado + 1","log_price"),
+          df_x,singular.ok = TRUE) # no me cuadra rooms -
+# exterior negativo? ruido?
+round((exp(coef(lm7))-1)*100,2)
 
 
 
@@ -79,26 +137,34 @@ summary(lm0)
 summary(lm1)
 summary(lm2)
 summary(lm3)
+summary(lm4)
+summary(lm5)
+summary(lm6)
+summary(lm7)
+# 
+# ggplot(data_idealista,aes(rooms2,log_price)) + geom_violin()
+# 
+# ggplot(data_idealista,aes(año)) + geom_bar()
 
 
 # con variables de open data sale max R2 .675
 # sin variables open data pero con la variable barrios en vez de distrito sale 0.69
 
-vif(lm2)
+vif(lm7)
 
-plot(lm2,ask=F)
+plot(lm7,ask=F)
 
 # data_idealista[which(hatvalues(lm2)>0.99),]
 
 # sort(cooks.distance(lm1))
-cooksd =  cooks.distance(lm2)
-data_idealista$cookd = cooks.distance(lm2)
+cooksd =  cooks.distance(lm7)
+df_x$cookd = cooks.distance(lm7)
 
 
-dim(data_idealista[data_idealista$cookd>0.01,])
-dim(data_idealista[data_idealista$cookd>0.005,])
+dim(df_x[df_x$cookd>0.01,])
+dim(df_x[df_x$cookd>0.005,])
 
-plot(cooks.distance(lm2))
+plot(cooks.distance(lm7))
 abline(h = 4*mean(cooksd, na.rm=T), col="red") 
 
 # outlierTest(lm1)
@@ -112,25 +178,27 @@ abline(h = 4*mean(cooksd, na.rm=T), col="red")
 # test <- c(1479,2777,2825)
 
 # data_cook = data_idealista[-test,]
-data_idealista[data_idealista$cookd>0.01,]
+df_x[df_x$cookd>0.005,]
 
-data_cook = data_idealista[data_idealista$cookd < 0.01,]
+data_cook = df_x[df_x$cookd < 0.005,]
 
 
 
 # lm3 <- lm(reformulate(regressors,"log_price"),
 #           data_cook)
 
-lm_cook <- lm(reformulate(regressors,"log_price"),
+lm_cook <- lm(reformulate("barri + square_mt + asc + rooms + new_planta + flag_planta + wcx + estudio + terraza + exterior + amueblado + 1","log_price"),
               data_cook)
 
 summary(lm_cook)
 
 
 
+
+
 date_to_save <- str_extract(path_modelling, "\\d{4}-\\d{2}-\\d{2}")
 
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_lm_cook_",date_to_save)
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_lm_cook_",date_to_save,".RDS")
 
 saveRDS(data_cook,file=path_to_save)
 
