@@ -108,7 +108,7 @@ def obtain_data_from_ids(ids, headers, cp):
     regex_m2 = re.compile(r'\d\d\d m²|\d\d m²')
     regex_hab = re.compile(r'\d hab|sin habitación')
     regex_baño = re.compile(r'\d baño')
-    regex_planta = re.compile(r'planta \d\d|planta \d|bajo')
+    regex_planta = re.compile(r'planta \d\d|planta \d|Entreplanta|bajo')
     
     x=1
     
@@ -205,7 +205,7 @@ def obtain_data_from_ids(ids, headers, cp):
                 
                 x += 1
                 
-                time.sleep(random.randint(3,4)*random.random())
+                time.sleep(random.randint(4,5)*random.random())
         
             except Exception as e:
                 print(f"error {e}")
@@ -268,8 +268,9 @@ def df_parse(df):
     df['exterior'] = df.exterior.apply(lambda x:  x.replace('exterior','1') if x == 'exterior' else '0').astype(int)
     try:
         df['planta'] = df.planta.apply(lambda x: x.replace('planta ',''))
-        df['planta'] = df.planta.apply(lambda x: '0' if x == "" else x)
+        df['planta'] = df.planta.apply(lambda x: np.nan if x == "" else x)
         df['planta'] = df.planta.apply(lambda x: '0' if x == "bajo" else x)
+        df['planta'] = df.planta.apply(lambda x: '1' if x == "Entreplanta" else x)
         df['planta'] = df.planta.astype(int)
     except:
         pass
@@ -330,7 +331,7 @@ def call_scrapper(cp_list,parent_path): # poner headers aqui
 
     print("csv folder: ",os.getcwd())
     
-    for chunked_list in chunk(cp_list, 6):
+    for chunked_list in chunk(cp_list, 5):
         tmp_cp_list = chunked_list
         print(tmp_cp_list)
     
@@ -353,7 +354,7 @@ def call_scrapper(cp_list,parent_path): # poner headers aqui
             print("guardado datos de:",zip_code)
             time.sleep(random.randint(2,4)*random.random()) 
 
-        time.sleep(random.randint(750,900))
+        time.sleep(random.randint(800,900))
 
 
 # In[26]:
