@@ -23,7 +23,7 @@ data_date = "2023-05-03"
 
 path_modelling = paste0("data_lm_cook_",data_date,".RDS")
 
-data_cook<- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista',path_modelling))
+data_cook<- readRDS(here::here('1_data','2_data_Idealista',path_modelling))
 
 data_cook$barri <- as.factor(data_cook$barri)
 
@@ -193,7 +193,7 @@ parameters {
 model {
   a ~ normal(mu_a, sigma_a);            
   for (n in 1:N)
-    y[n] ~ normal(a[barri[n]] + b * x1[n] + c * x2[N], sigma_y);
+    y[n] ~ normal(a[barri[n]] + b * x1[n] + c * x2[n], sigma_y);
 }
 "
 
@@ -216,7 +216,7 @@ plot(fit_hier)
 
 # Save hierarchical model -------------------------------------------------
 
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_hierarchical.RDS")
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2.RDS")
 
 
 saveRDS(fit_hier, path_to_save)
