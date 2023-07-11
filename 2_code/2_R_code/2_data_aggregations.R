@@ -258,6 +258,18 @@ data_idealista = groupingDataOpenData(data_idealista,bar_copas,"bar_copas")
 
 summary(data_idealista)
 
+
+
+# net income per house ----------------------------------------------------
+renda_neta = renda_neta_mitjana_per_llar_20
+
+mean_renda_neta = renda_neta %>% group_by(codi_barri) %>% summarise(mean_income=mean(import_euros))
+names(mean_renda_neta)
+names(data_idealista)
+
+data_idealista = left_join(data_idealista,mean_renda_neta, by =c('id_barri' = 'codi_barri'))
+
+
 # Fill all NA with 0 (know that are from the barris/ districtes aggreggation)
 data_idealista <- data_idealista %>% replace(is.na(.), 0)
 
@@ -269,7 +281,12 @@ date_to_save <- str_extract(path_idealista, "\\d{4}-\\d{2}-\\d{2}")
 
 path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_modelling_",date_to_save,".RDS")
 
+path_to_save_csv = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_modelling_",date_to_save,".csv")
+
 saveRDS(data_idealista,file=path_to_save)
+
+readr::write_csv(data_idealista,path_to_save_csv)
+
 
 print(path_to_save)
 
