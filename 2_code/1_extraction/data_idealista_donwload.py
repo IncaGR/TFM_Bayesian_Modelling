@@ -37,9 +37,9 @@ headers = {
 
 
 cp = ["{:05d}".format(i) for i in range(8001,8043)] # 8001 - 8010 , 8011 - 8021, 8021 - 8031
-cp
+# cp
 
-url_cp = "https://www.idealista.com/buscar/alquiler-viviendas/{}/".format(cp[0])
+# url_cp = "https://www.idealista.com/buscar/alquiler-viviendas/{}/".format(cp[0])
 
 parent_path = 'C:\\Users\\ggari\\Desktop\\1_projects\\TFM'
 
@@ -48,6 +48,6 @@ data_idealista_path = 'C:\\Users\\ggari\\Desktop\\1_projects\\TFM\\1_data\\2_dat
 
 call_scrapper(cp,data_idealista_path)
 
-concat_csv(data_idealista_path,folder="extraction_2023-06-18")
+concat_csv(data_idealista_path,folder="extraction_2023-07-09")
 
 

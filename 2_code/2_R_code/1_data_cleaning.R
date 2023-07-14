@@ -8,7 +8,9 @@ library(lubridate)
 getwd()
 
 
-date_of_data = "2023-05-03" # put the date of the file you want to clean
+# date_of_data = "2023-05-03" # put the date of the file you want to clean
+date_of_data = "2023-06-05" # test sample
+
 
 path_idealista_folder = paste("extraction",date_of_data, sep = "_")
 path_idealista_csv = paste0("datos_scrapping_",date_of_data,".csv")
@@ -155,6 +157,7 @@ ggplot(data_idealista,aes(planta)) + geom_bar()
 data_idealista = data_idealista %>% mutate(flag_planta = ifelse(planta=="0",1,0),
                           new_planta = ifelse(planta=="bajo",0,as.numeric(stringr::str_extract(planta,"\\d+")))) # imputted when scrapping
 
+ggplot(data_idealista,aes(new_planta)) + geom_bar()
 
 # Extract date using regular expression
 date_to_save <- str_extract(path_idealista, "\\d{4}-\\d{2}-\\d{2}")

@@ -38,11 +38,16 @@ J <- length(unique(barri))
 y <- data_cook$log_price
 # x <- log(data_cook$square_mt)
 x1 <- log(data_cook$square_mt)
+# x1 <- data_cook$square_mt # test no log NO USE TAKE MUCH TIME
 x2 <- data_cook$rooms
-arbres <- data_cook %>%
-  group_by(barri) %>%
-  summarise(arbres = first(log(n_arbres_bcn_barri))) %>%
-  pull(arbres) 
+mean_income <- data_cook %>%
+group_by(barri) %>%
+summarise(mean_income = first(log(mean_income))) %>%
+pull(mean_income)
+# mean_income <- data_cook %>%
+#   group_by(barri) %>%
+#   summarise(mean_income = first(mean_income)) %>% # test no log
+#   pull(mean_income) 
 
 data_list <- list(
   N = N,
@@ -52,9 +57,37 @@ data_list <- list(
   x1 = x1,
   x2 = x2,
   barri = barri,
-  arbres = arbres
+  mean_income = mean_income
 )
 
+# model_code <- "
+# data {
+#   int<lower=0> N; 
+#   int<lower=0> J;
+#   vector[N] y;
+#   real x1[N];
+#   int x2[N];
+#   int barri[N];
+#   vector[J] mean_income;
+# }
+# parameters {
+#   real a[J];
+#   real b;  
+#   real c;
+#   real g_0;
+#   real g_1;
+#   real<lower=0> sigma_y;
+#   real<lower=0> sigma_a;
+# }
+# model {
+#   for (j in 1:J)
+#     a[j] ~ normal(g_0 + g_1 * mean_income[j], sigma_a);
+#   for (n in 1:N)
+#     y[n] ~ normal(a[barri[n]] + b * x1[n] + c * x2[n], sigma_y);
+# }
+# "
+
+# PRIORS
 model_code <- "
 data {
   int<lower=0> N; 
@@ -63,7 +96,7 @@ data {
   real x1[N];
   int x2[N];
   int barri[N];
-  vector[J] arbres;
+  vector[J] mean_income;
 }
 parameters {
   real a[J];
@@ -75,10 +108,18 @@ parameters {
   real<lower=0> sigma_a;
 }
 model {
+  g_0 ~ normal(0, 10);
+  g_1 ~ normal(0, 10);
+  sigma_y ~ cauchy(0, 10);
+  sigma_a ~ cauchy(0, 10);
+  b ~ cauchy(0, 10);
+  c ~ cauchy(0, 10);
+  
   for (j in 1:J)
-    a[j] ~ normal(g_0 + g_1 * arbres[j], sigma_a);
+    a[j] ~ normal(g_0 + g_1 * mean_income[j], sigma_a);
   for (n in 1:N)
     y[n] ~ normal(a[barri[n]] + b * x1[n] + c * x2[n], sigma_y);
+
 }
 "
 
@@ -95,8 +136,9 @@ plot(fit_4)
 
 # Save hierarchical model -------------------------------------------------
 
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4.RDS")
-
+# path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4.RDS")
+# path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_no_log.RDS") # test no log square mt
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_priors.RDS") # with priors
 
 saveRDS(fit_4, path_to_save)
 
@@ -131,7 +173,7 @@ mean(exp(y.tilde))
 plot(fit_4)
 plot(fit_4,plotfun = "rhat")
 plot(fit_4, plotfun = "trace", pars = c("b", "c"), inc_warmup = TRUE)
-plot(fit_4, show_density = TRUE, pars=c("a[9]","a[40]"), ci_level = 0.8, fill_color = "purple")
+plot(fit_4, show_density = TRUE, pars=c("b","c"), ci_level = 0.8, fill_color = "purple")
 
 
 

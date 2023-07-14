@@ -7,7 +7,10 @@ library(broom.mixed)
 
 # upload data ready for modelling ------------------------------------------
 
-data_date = "2023-05-03"
+# data_date = "2023-05-03"
+data_date = "2023-06-05" # test sample
+
+
 
 path_modelling = paste0("data_modelling_",data_date,".RDS")
 
@@ -57,7 +60,8 @@ regressors<-c(
   # # "n_bar_copas_districte",
   "square_mt",
   "new_planta",
-  "flag_planta"
+  "flag_planta",
+  "mean_income"
 )
 
 # data_idealista[is.na(data_idealista$n_c_comercials),]$n_c_comercials <- 0
@@ -66,8 +70,10 @@ regressors<-c(
 #   replace_na(list(n_c_comercials = 0,
 #                   Museus = 0))
 
-
 lm0 <- lm(reformulate("square_mt","log_price"),
+          data_idealista)
+
+lm0 <- lm(reformulate("square_mt + mean_income","log_price"),
           data_idealista)
 
 lm1 <- lm(reformulate("square_mt + rooms","log_price"),
@@ -112,6 +118,12 @@ lm6 <- lm(reformulate("square_mt + asc + rooms2 + new_planta + flag_planta + wcx
           df_x)
 round((exp(coef(lm6))-1)*100,2)
 
+plot(lm6,which = 3)
+
+
+
+# Ad hoc analysis ---------------------------------------------------------
+# Each dataset (montly data) should be different 
 
 df_x %>% filter(wc >5)
 
@@ -160,9 +172,15 @@ plot(lm7,ask=F)
 cooksd =  cooks.distance(lm7)
 df_x$cookd = cooks.distance(lm7)
 
+names(df_x)
+
+df_x = df_x %>% select(-c(X,area,id,name,zone,ubicacion_full,calle,barrio,barrio2,distrito,price_before,estado,año,datalles2,
+                   cp,actualizacion,actualizacion2,extract_day,regex_barris,key_open,key_shp,
+                   n))
 
 dim(df_x[df_x$cookd>0.01,])
 dim(df_x[df_x$cookd>0.005,])
+dim(df_x[df_x$cookd>0.002,])
 
 plot(cooks.distance(lm7))
 abline(h = 4*mean(cooksd, na.rm=T), col="red") 
@@ -181,8 +199,9 @@ abline(h = 4*mean(cooksd, na.rm=T), col="red")
 df_x[df_x$cookd>0.005,]
 
 data_cook = df_x[df_x$cookd < 0.005,]
+data_cook[data_cook$cookd > 0.002,]
 
-
+data_cook = data_cook[data_cook$cookd < 0.002,]
 
 # lm3 <- lm(reformulate(regressors,"log_price"),
 #           data_cook)
@@ -192,6 +211,7 @@ lm_cook <- lm(reformulate("barri + square_mt + asc + rooms + new_planta + flag_p
 
 summary(lm_cook)
 
+# plot(lm_cook)
 
 
 
@@ -201,6 +221,7 @@ date_to_save <- str_extract(path_modelling, "\\d{4}-\\d{2}-\\d{2}")
 path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_lm_cook_",date_to_save,".RDS")
 
 saveRDS(data_cook,file=path_to_save)
+
 
 # # Extraño que con mas habitaciones menos precio, contra intuitivo.
 # betas <- as.data.frame(dfbetas(lm3))

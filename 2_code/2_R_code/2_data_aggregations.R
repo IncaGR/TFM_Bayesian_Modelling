@@ -4,7 +4,8 @@ library(car)
 
 getwd()
 
-date_of_data = "2023-05-03" # put the date of the file you want to aggregate
+# date_of_data = "2023-05-03" # put the date of the file you want to aggregate
+date_of_data = "2023-06-05" # test sample
 
 wd = "C:/Users/ggari/Desktop/1_projects/TFM"
 
