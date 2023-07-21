@@ -288,6 +288,5 @@ saveRDS(data_idealista,file=path_to_save)
 
 readr::write_csv(data_idealista,path_to_save_csv)
 
-
 print(path_to_save)
 

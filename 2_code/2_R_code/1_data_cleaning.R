@@ -8,8 +8,8 @@ library(lubridate)
 getwd()
 
 
-# date_of_data = "2023-05-03" # put the date of the file you want to clean
-date_of_data = "2023-06-05" # test sample
+date_of_data = "2023-05-03" # put the date of the file you want to clean
+# date_of_data = "2023-06-05" # test sample
 
 
 path_idealista_folder = paste("extraction",date_of_data, sep = "_")
@@ -90,17 +90,37 @@ ggplot(data_idealista,aes(square_mt,price)) +
 
 # data_idealista = data_idealista[data_idealista$price<70000,]
 # data_idealista = data_idealista[data_idealista$price<10000,] # testing 
-data_idealista = data_idealista[data_idealista$price<7500,] # testing 
+# data_idealista = data_idealista[data_idealista$price<7500,] # testing 
 
 data_idealista = data_idealista[data_idealista$square_mt>10,] # casa con 0 metros, eliminada
-data_idealista = data_idealista[data_idealista$square_mt<375,]
+# data_idealista = data_idealista[data_idealista$square_mt<375,]
 
 ## Adding new binary variables
 data_idealista = data_idealista %>%
   mutate(casa = ifelse(grepl("Casa o chalet",data_idealista$name)==TRUE,1,0))
 
+data_idealista$casa <- as.factor(data_idealista$casa)
+
+# minimo precio considerado en Idealista como lujo 5000
+data_idealista = data_idealista %>%
+  mutate(lujo = ifelse(price>=5000,1,0))
+
+data_idealista$lujo <- as.factor(data_idealista$lujo)
+
 data_idealista = data_idealista %>%
   mutate(estudio = ifelse(grepl("Estudio",data_idealista$name)==TRUE,1,0))
+
+data_idealista$estudio <- as.factor(data_idealista$estudio)
+
+
+ggplot(data_idealista,aes(square_mt,price,color = lujo)) + 
+  geom_jitter()
+
+ggplot(data_idealista,aes(square_mt,price,color = casa)) + 
+  geom_jitter()
+
+ggplot(data_idealista,aes(square_mt,price,color = estudio)) + 
+  geom_jitter(alpha= 0.5)
 
 ## Convert to factor some variables
 
@@ -115,7 +135,7 @@ data_idealista = data_idealista %>%
 
 # unique(pisos_2$wc2)
 
-data_idealista$wc2 <- factor(x = data_idealista$wc2, levels = c("1","2","3 or more"))
+data_idealista$wc2 <- factor(x = data_idealista$wc2, levels = c("1","2","3","4 o mas"))
 
 # str(pisos_2$wc2)
 
@@ -127,15 +147,19 @@ ggplot(data_idealista, aes(log(square_mt))) +
   geom_histogram(bins = 50)
 
 data_idealista = data_idealista%>%
-  dplyr::mutate(rooms2 = ifelse(rooms >= 4, "4 or more", rooms),
+  dplyr::mutate(rooms2 = ifelse(rooms >= 4, "4 o mas", rooms),
                 rooms2 = ifelse(rooms == 3, "3", rooms2),
                 rooms2 = ifelse(rooms == 2, "2", rooms2),
-                rooms2 = ifelse(rooms  <= 1, "1", rooms2)
+                rooms2 = ifelse(rooms  == 1, "1", rooms2),
+                rooms2 = ifelse(rooms == 0, "0 estudio", rooms2)
   )
 
-
-data_idealista$rooms2 <- factor(x = data_idealista$rooms2, levels = c("1","2","3","4 or more"))
+data_idealista$rooms2 <- factor(x = data_idealista$rooms2, levels = c("0 estudio","1","2","3","4 o mas"))
 data_idealista$log_price <- log(data_idealista$price)
+
+ggplot(data_idealista,aes(x = (rooms2), y = price)) + 
+  geom_boxplot() +
+  geom_jitter(width=0.2)
 
 ## merging terraza and blacon
 
