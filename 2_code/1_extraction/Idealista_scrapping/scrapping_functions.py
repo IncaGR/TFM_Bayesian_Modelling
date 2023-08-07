@@ -87,9 +87,6 @@ def get_ids(headers, cp):
     return ids
 
 
-# In[6]:
-
-
 def obtain_data_from_ids(ids, headers, cp):
     '''
     Function that return all the data from each add id from previous function "get_ids".
@@ -205,7 +202,7 @@ def obtain_data_from_ids(ids, headers, cp):
                 
                 x += 1
                 
-                time.sleep(random.randint(4,5)*random.random())
+                time.sleep(random.randint(4,6)*random.random())
         
             except Exception as e:
                 print(f"error {e}")
@@ -213,11 +210,6 @@ def obtain_data_from_ids(ids, headers, cp):
 #                 dic[i] = ["error"] * 50
                           
     return dic
-
-# test
-
-
-# In[7]:
 
 
 def dic_to_df(dic):
@@ -231,10 +223,6 @@ def dic_to_df(dic):
     df = pd.DataFrame.from_dict(dic, orient='index',columns=colnames)
     
     return df
-    
-
-
-# In[8]:
 
 
 def df_parse(df):
@@ -278,15 +266,6 @@ def df_parse(df):
     
     return df
 
-
-# #### Lista de codigos postales
-
-# In[2]:
-
-
-
-
-
 def create_folder(parent_path):
     
     today = date.today()
@@ -307,19 +286,11 @@ def create_folder(parent_path):
     return directory
         
 
-
-# In[14]:
-
-
 def chunk(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
         
-
-
-# In[15]:
-
 
 def call_scrapper(cp_list,parent_path): # poner headers aqui
     
@@ -331,7 +302,7 @@ def call_scrapper(cp_list,parent_path): # poner headers aqui
 
     print("csv folder: ",os.getcwd())
     
-    for chunked_list in chunk(cp_list, 5):
+    for chunked_list in chunk(cp_list, 4):
         tmp_cp_list = chunked_list
         print(tmp_cp_list)
     
@@ -354,10 +325,8 @@ def call_scrapper(cp_list,parent_path): # poner headers aqui
             print("guardado datos de:",zip_code)
             time.sleep(random.randint(2,4)*random.random()) 
 
-        time.sleep(random.randint(800,900))
-
-
-# In[26]:
+        if "08042" not in tmp_cp_list: # no esperar despues de la ultima extraccion
+            time.sleep(random.randint(800,900))
 
 
 def concat_csv(parent_path, folder=None):

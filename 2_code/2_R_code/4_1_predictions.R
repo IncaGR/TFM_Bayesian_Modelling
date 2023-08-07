@@ -1,6 +1,7 @@
 ### Test model
 # We are going to test our hierarchical model with the next month data.
-
+library(dplyr)
+library(ggplot2)
 
 # read test data ----------------------------------------------------------
 
@@ -12,6 +13,13 @@ test_data<- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Ide
 
 test_data$barri <- as.factor(test_data$barri)
 
+table(test_data$barri)
+
+test_data = test_data[!is.na(test_data$price),]
+
+summary(test_data)
+# table(test_data$wc2)
+
 test_data = test_data %>% filter(lujo == 0)
 
 # read fit ----------------------------------------------------------------
@@ -20,7 +28,16 @@ test_data = test_data %>% filter(lujo == 0)
 # fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_priors.RDS") # 842.204
 # fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_1.RDS") # 800.5172 
 # fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_2.RDS") # 797.9225
-fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_2_1.RDS") # 798.4418
+# fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_2_1.RDS") # 798.4418
+# fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_3.RDS") # no lujo 586.7039
+# fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_4.RDS") # 581.281 # Best model
+# fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_5.RDS")
+# fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_6.RDS") # 1050.08, 0.700949
+fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_8.RDS") # 662.9664
+
+# try variant in intercept and slope
+# try only no lujo observations
+
 
 summary(fit)
 # Extract the parameter samples from the fitted model
@@ -32,7 +49,12 @@ n.test <- nrow(test_data)
 y.tilde <- matrix(0, nrow = n.sims, ncol = n.test)
 for (i in 1:n.test) {
   y.tilde[,i] <- rnorm(n.sims, sims$a[,test_data$barri[i]] + sims$b * log(test_data$square_mt[i]) + sims$c * test_data$rooms[i]
-                       + sims$d * test_data$wc[i] + sims$e * test_data$lujo[i], sims$sigma_y)
+                       + sims$d * test_data$wc[i] + 
+                         # sims$e * test_data$lujo[i] + 
+                         sims$f * test_data$asc[i]
+                       + sims$b6 * test_data$terraza[i] 
+                       # + sims$b7 * test_data$barri_playa[i]
+                       , sims$sigma_y)
 }
 
 # # Transform the predictions back to the original scale
@@ -47,8 +69,11 @@ actual_means <- exp(test_data$log_price)
 # Compute a measure of predictive performance
 RMSE <- sqrt(mean((predicted_means - actual_means)^2))
 
+print(RMSE)
 
 rsquared = 1 - (sum((actual_means - predicted_means)^2)/sum((actual_means - mean(actual_means))^2))
+
+print(rsquared)
 
 plot(actual_means,predicted_means)
 
@@ -58,36 +83,9 @@ test_data$y_tilde = predicted_means
 
 names(test_data)
 test_data %>% ggplot(aes(x=price,y=y_tilde,color = as.factor(lujo))) + geom_jitter(alpha=0.5,shape = 1) +
-  geom_smooth(method = 'lm',se = FALSE) +
   facet_wrap(vars(distrito2)) +
   theme_bw()
 
 
 print(RMSE)
-# enhance the model
-# add playa variable per districte and barri, are correlated with barris...
 
-ggplot(test_data,aes(x = rooms2, y = price)) + 
-  geom_boxplot() +
-  geom_jitter(width=0.2)
-
-
-
-t<- read_csv(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista','1_raw','extraction_2023-06-05','datos_scrapping_2023-06-05.csv'))
-
-
-
-t_lm <- lm(log(price)~ square_mt + rooms,data = t)
-summary(t_lm)
-
-t %>% filter(rooms <= 5) %>%
-  ggplot(aes(x = as.factor(rooms), y = price)) + 
-  geom_boxplot() +
-  geom_jitter(width=0.2)
-
-
-view(t %>% filter(rooms >= 7))
-view(t %>% filter(square_mt <  10))
-view(t %>% filter(rooms == 0))
-
-view(t %>% filter(price >= 15000))

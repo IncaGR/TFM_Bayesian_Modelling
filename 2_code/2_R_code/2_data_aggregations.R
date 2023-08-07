@@ -89,6 +89,8 @@ summary(data_idealista)
 ggplot(data_idealista,aes(square_mt,price, col = distrito2)) + 
   geom_jitter()
 
+# numero de barrios
+unique(data_idealista$id_barri)
 
 # reading data API Barcelona ----------------------------------------------
 
@@ -276,6 +278,12 @@ data_idealista <- data_idealista %>% replace(is.na(.), 0)
 
 summary(data_idealista)
 
+
+# atur perct --------------------------------------------------------------
+
+names(atur_23_perc)
+atur_grp = atur_23_perc %>% group_by(any,codi_barri) %>% summarise(mean_perc_atur = mean(pes_atur))
+data_idealista = left_join(data_idealista,atur_grp, by =c('id_barri' = 'codi_barri'))
 # Save document
 
 date_to_save <- str_extract(path_idealista, "\\d{4}-\\d{2}-\\d{2}")
@@ -290,3 +298,5 @@ readr::write_csv(data_idealista,path_to_save_csv)
 
 print(path_to_save)
 
+# table(data_idealista$wc2)
+# table(data_idealista$wc)

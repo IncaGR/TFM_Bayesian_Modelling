@@ -35,7 +35,6 @@ headers = {
     
 }
 
-
 cp = ["{:05d}".format(i) for i in range(8001,8043)] # 8001 - 8010 , 8011 - 8021, 8021 - 8031
 # cp
 
@@ -46,8 +45,6 @@ parent_path = 'C:\\Users\\ggari\\Desktop\\1_projects\\TFM'
 data_idealista_path = 'C:\\Users\\ggari\\Desktop\\1_projects\\TFM\\1_data\\2_data_Idealista\\1_raw'
 
 
-call_scrapper(cp,data_idealista_path)
+# call_scrapper(cp,data_idealista_path)
 
-concat_csv(data_idealista_path,folder="extraction_2023-07-09")
-
-
+concat_csv(data_idealista_path,"extraction_2023-08-03")

@@ -8,8 +8,8 @@ library(lubridate)
 getwd()
 
 
-date_of_data = "2023-05-03" # put the date of the file you want to clean
-# date_of_data = "2023-06-05" # test sample
+# date_of_data = "2023-05-03" # put the date of the file you want to clean
+date_of_data = "2023-06-05" # test sample
 
 
 path_idealista_folder = paste("extraction",date_of_data, sep = "_")
@@ -120,18 +120,23 @@ ggplot(data_idealista,aes(square_mt,price,color = casa)) +
   geom_jitter()
 
 ggplot(data_idealista,aes(square_mt,price,color = estudio)) + 
-  geom_jitter(alpha= 0.5)
+  geom_jitter(alpha= 0.4)
 
 ## Convert to factor some variables
 
 # unique(pisos_2$wc)
 
+table(data_idealista$wc)
+
+
 data_idealista = data_idealista %>%
   dplyr::mutate(wc2 = ifelse(wc >= 4, "4 o mas", wc),
-                wc2 = ifelse(wc == 3, "3 ", wc2),
+                wc2 = ifelse(wc == 3, "3", wc2),
                 wc2 = ifelse(wc == 2, "2", wc2),
                 wc2 = ifelse(wc == 1, "1", wc2)
   )
+
+table(data_idealista$wc2)
 
 # unique(pisos_2$wc2)
 
@@ -146,6 +151,8 @@ ggplot(data_idealista, aes(log(price))) +
 ggplot(data_idealista, aes(log(square_mt))) +
   geom_histogram(bins = 50)
 
+table(data_idealista$rooms)
+
 data_idealista = data_idealista%>%
   dplyr::mutate(rooms2 = ifelse(rooms >= 4, "4 o mas", rooms),
                 rooms2 = ifelse(rooms == 3, "3", rooms2),
@@ -153,6 +160,8 @@ data_idealista = data_idealista%>%
                 rooms2 = ifelse(rooms  == 1, "1", rooms2),
                 rooms2 = ifelse(rooms == 0, "0 estudio", rooms2)
   )
+
+table(data_idealista$rooms2)
 
 data_idealista$rooms2 <- factor(x = data_idealista$rooms2, levels = c("0 estudio","1","2","3","4 o mas"))
 data_idealista$log_price <- log(data_idealista$price)

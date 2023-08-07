@@ -27,9 +27,17 @@ data_cook<- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Ide
 
 data_cook$barri <- as.factor(data_cook$barri)
 
+# no lujo?
+data_cook = data_cook %>% filter(lujo == 0)
 
 names(data_cook)
 # price hierarchical covariate --------------------------------------------
+
+# VARIABLES USED IN OLS
+# lm7 <- lm(log_price ~ 1 + barri + square_mt + asc + rooms2 + new_planta + 
+#             flag_planta + wc2 + terraza + exterior + amueblado
+#           + lujo
+#           , data = df_x)
 
 N= nrow(data_cook)
 barri_name <- unique(data_cook$barri)
@@ -41,49 +49,72 @@ x1 <- log(data_cook$square_mt)
 x2 <- data_cook$rooms
 # x2 <- data_cook$rooms2 # test no working only numeric vals
 x3 <- data_cook$wc # test other wc2, wcx
-x4 <- data_cook$lujo
+# x4 <- data_cook$lujo
+x5 <- data_cook$asc
+terraza <- data_cook$terraza
+# playa <- data_cook$barri_playa
 mean_income <- data_cook %>%
 group_by(barri) %>%
 summarise(mean_income = first(log(mean_income))) %>%
 pull(mean_income)
-# mean_income <- data_cook %>%
+# mean_atur <- data_cook %>%
 #   group_by(barri) %>%
-#   summarise(mean_income = first(mean_income)) %>% # test no log
-#   pull(mean_income) 
+#   summarise(mean_atur = first(mean_perc_atur)) %>%
+#   pull(mean_atur) # no aporta
+
+# playa <- data_cook %>%
+#   group_by(barri) %>%
+#   summarise(playa = first(barri_playa)) %>%
+#   pull(playa)
 
 data_list <- list(
   N = N,
   J = J,
   y = y,
-  # x = x,
   x1 = x1, # log square mt
   x2 = x2, # nº rooms
   x3 = x3, # nº wc
-  x4 = x4, # lujo
+  # x4 = x4, # lujo
+  x5 = x5,
+  terraza = terraza,
+  # playa = playa,
   barri = barri,
   mean_income = mean_income
+  # ,mean_atur = mean_atur
+  
 )
+
+
+# Varying intercept model -------------------------------------------------
 
 model_code <- "
 data {
   int<lower=0> N;
   int<lower=0> J;
-  vector[N] y;
-  real x1[N];
-  int x2[N];
-  int x3[N];
-  int x4[N];
+  vector[N] y; // log price
+  real x1[N]; // log square mt
+  int x2[N]; // nº rooms
+  int x3[N]; // nº wc
+  // int x4[N]; // binari lujo
+  int x5[N]; // binari elevator
+  int terraza[N];
   int barri[N];
+  // int playa[J]; no effect
   vector[J] mean_income;
+  //vector[J] mean_atur; no effect
 }
 parameters {
-  real a[J]; 
-  real b;
-  real c;
-  real d;
-  real e;
+  real a[J]; // intercept each barri
+  real<lower=0> b; // log square mt
+  real c; // nº rooms
+  real<lower=0> d; // numeric nº wc
+  //real<lower=0> e; // lujo
+  real<lower=0> f; // asc
+  real<lower=0> b6; // terraza
   real g_0;
   real g_1;
+  // real g_2; no effect
+  //real g_3; no effect
   real<lower=0> sigma_y;
   real<lower=0> sigma_a;
 }
@@ -94,49 +125,71 @@ model {
   b ~ cauchy(0,2.5);
   c ~ cauchy(0,2.5);
   d ~ cauchy(0,2.5);
-  e ~ cauchy(0,2.5);
+  //e ~ cauchy(0,2.5);
+  f ~ cauchy(0,2.5);
+  b6 ~ cauchy(0,2.5);
   for (j in 1:J)
     a[j] ~ normal(g_0 + g_1 * mean_income[j], sigma_a);
   for (n in 1:N)
-    y[n] ~ normal(a[barri[n]] + b * x1[n] + c * x2[n] + d * x3[n] + e * x4[n], sigma_y);
+    y[n] ~ normal(a[barri[n]] + b * x1[n] + c * x2[n] + d * x3[n] 
+    //+ e * x4[n]
+     + f * x5[n] + b6 * terraza[n] , sigma_y);
 }
 "
 
-# PRIORS (does not coverge well)
+
+# Varying slope change ----------------------------------------------------
+
 # model_code <- "
 # data {
-#   int<lower=0> N; 
+#   int<lower=0> N;
 #   int<lower=0> J;
-#   vector[N] y;
-#   real x1[N];
-#   int x2[N];
+#   vector[N] y; // log price
+#   real x1[N]; // log square mt
+#   int x2[N]; // nº rooms
+#   int x3[N]; // nº wc
+#   int x4[N]; // binari lujo 
+#   int x5[N]; // binari elevator
+#   int terraza[N];
 #   int barri[N];
 #   vector[J] mean_income;
 # }
 # parameters {
-#   real a[J];
-#   real b;  
-#   real c;
+#   real a[J]; // intercept each barri
+#   real b[J]; // slope for each barri
+#   real c; // nº rooms
+#   real<lower=0> d; // numeric nº wc
+#   real<lower=0> e; // lujo
+#   real<lower=0> f; // asc
+#   real<lower=0> b6; // terraza
 #   real g_0;
 #   real g_1;
+#   real h_0; // intercept for slope
+#   real h_1; // slope for slope
 #   real<lower=0> sigma_y;
 #   real<lower=0> sigma_a;
+#   real<lower=0> sigma_b; // standard deviation for slope
 # }
 # model {
-#   g_0 ~ normal(0, 10);
-#   g_1 ~ normal(0, 10);
+# 
 #   sigma_y ~ cauchy(0, 10);
 #   sigma_a ~ cauchy(0, 10);
-#   b ~ cauchy(0, 10);
-#   c ~ cauchy(0, 10);
-#   
-#   for (j in 1:J)
+#   sigma_b ~ cauchy(0, 10);
+#   c ~ cauchy(0,2.5);
+#   d ~ cauchy(0,2.5);
+#   e ~ cauchy(0,2.5);
+#   f ~ cauchy(0,2.5);
+#   b6 ~ cauchy(0,2.5);
+#   for (j in 1:J) {
 #     a[j] ~ normal(g_0 + g_1 * mean_income[j], sigma_a);
+#     b[j] ~ normal(h_0 + h_1 * mean_income[j], sigma_b); // slope varying by barri and mean_income
+#   }
 #   for (n in 1:N)
-#     y[n] ~ normal(a[barri[n]] + b * x1[n] + c * x2[n], sigma_y);
-# 
+#     y[n] ~ normal(a[barri[n]] + b[barri[n]] * x1[n] + c * x2[n] + d * x3[n] + e * x4[n]
+#      + f * x5[n] + b6 * terraza[n] , sigma_y);
 # }
 # "
+
 
 translate = stanc(model_code  = model_code)
 
@@ -146,8 +199,8 @@ model = stan_model(stanc_ret = translate)
 fit_4 <- sampling(model, data = data_list, chains = 4, iter =6000, verbose = TRUE, seed = 132) # 4000?
 
 # ## Convergence analysis
-print(fit_4)
-plot(fit_4)
+print(fit_4) # Cuando hay porblemas de multicolinearidad max depth sube y r-hat
+# plot(fit_4)
 
 # Save hierarchical model -------------------------------------------------
 
@@ -156,16 +209,21 @@ plot(fit_4)
 # path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_priors.RDS") # with priors
 # path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_1.RDS") # wc cov
 # path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_2.RDS") # terrace
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_2_1.RDS") # lujo cauchy narrow
+# path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_2_1.RDS") # lujo cauchy narrow
+# path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_3.RDS") # asc
+# path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_4.RDS") # terraza
+# path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_5.RDS") # playa
+# path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_6.RDS") # intercept: playa+renta
+# path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_7.RDS") # varying the slope # no converge
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_8.RDS") # no lujo data
 
 
 saveRDS(fit_4, path_to_save)
 
 
-
 # read fit ----------------------------------------------------------------
 
-fit_4 <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4.RDS")
+fit_4 <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_8.RDS")
 
 # fit_4
 # predicting new unit -----------------------------------------------------
@@ -182,20 +240,23 @@ b <- sims$b
 c <- sims$c
 d <- sims$d
 e <- sims$e
+f <- sims$f
+b6 <- sims$b6
+# b7 <- sims$b7
 sigma.y <- sims$sigma_y
 n.sims <- nrow(a)
-y.tilde <- rnorm(n.sims, a[,40] + b * log(90) + c * 3 + d * 2 + e * 0, sigma.y)
+y.tilde <- rnorm(n.sims, a[,40] + b * log(90) + c * 3 + d * 2 + e * 0 + f * 1 + b6 * 1 , sigma.y)
 
 # exp(y.tilde)
 hist(y.tilde)
 hist(exp(y.tilde))
 mean(exp(y.tilde))
 
+# model diagnostic --------------------------------------------------------
 plot(fit_4)
 plot(fit_4,plotfun = "rhat")
-plot(fit_4, plotfun = "trace", pars = c("b", "c","d","e"), inc_warmup = TRUE)
-plot(fit_4, show_density = TRUE, pars=c("b","c","d","e"), ci_level = 0.8, fill_color = "purple")
+plot(fit_4, plotfun = "trace", pars = c("b", "c","d","e","f","b6"), inc_warmup = TRUE)
+plot(fit_4, show_density = TRUE, pars=c("b","c","d","e","f","b6"), ci_level = 0.8, fill_color = "purple")
 
 
 
-# model diagnostic --------------------------------------------------------

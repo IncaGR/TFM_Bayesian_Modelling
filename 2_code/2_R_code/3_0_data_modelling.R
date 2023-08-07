@@ -5,12 +5,17 @@ library(broom)
 library(broom.mixed)
 
 
-# upload data ready for modelling ------------------------------------------
 
+# Constants ---------------------------------------------------------------
+
+# MODELLING DATE
 data_date = "2023-05-03"
 # data_date = "2023-06-05" # test sample
 
+# PREDICT DATE
+data_predict = "2023-06-05"
 
+# upload data ready for modelling ------------------------------------------
 
 path_modelling = paste0("data_modelling_",data_date,".RDS")
 
@@ -31,7 +36,7 @@ data_idealista = data_idealista %>% mutate(barri_playa = ifelse(barri %in% c("la
 # data_idealista %>% mutate(barri_playa = ifelse(barri %in% c("Distrito Ciutat Vella",
 #                                                                                 "Distrito Ciutat Vella"),1,0))
 
-data_idealista = data_idealista %>% filter(lujo == 0)
+# data_idealista = data_idealista %>% filter(lujo == 0)
 
 regressors<-c(
   # "barri",
@@ -119,14 +124,14 @@ lm5 <- lm(reformulate("square_mt + asc + rooms2 + new_planta + flag_planta ","lo
 # lm6 <- lm(reformulate("square_mt + asc + rooms2 + new_planta + flag_planta + asc*new_planta","log_price"),
 #           df_x)
 
-df_x = df_x %>%
-  dplyr::mutate(wcx = ifelse(wc >= 4, "4 o mas", wc),
-                wcx = ifelse(wc == 3, "3", wcx),
-                wcx = ifelse(wc == 2, "2", wcx),
-                wcx = ifelse(wc == 1, "1", wcx)
-  )
+# df_x = df_x %>%
+#   dplyr::mutate(wcx = ifelse(wc >= 4, "4 o mas", wc),
+#                 wcx = ifelse(wc == 3, "3", wcx),
+#                 wcx = ifelse(wc == 2, "2", wcx),
+#                 wcx = ifelse(wc == 1, "1", wcx)
+#   )
 
-lm6 <- lm(reformulate("square_mt + asc + rooms2 + new_planta + flag_planta + wcx + barri_playa","log_price"),
+lm6 <- lm(reformulate("square_mt + asc + rooms2 + new_planta + flag_planta + wc2 + barri_playa","log_price"),
           df_x)
 round((exp(coef(lm6))-1)*100,2)
 
@@ -155,7 +160,10 @@ df_x = df_x %>% mutate(n_arbres_viaris_barri = ifelse(barri == "el Coll",0,n_arb
 #                       + 1","log_price"),
 #           df_x,singular.ok = TRUE) # no me cuadra rooms -
 
-lm7 <- lm(log_price ~ 1 + barri + square_mt + asc + rooms2 + new_planta + flag_planta + wcx + terraza + exterior + amueblado, data = df_x)
+lm7 <- lm(log_price ~ 1 + barri + square_mt + asc + rooms2 + new_planta + 
+            flag_planta + wc2 + terraza + exterior + amueblado
+          + lujo
+          , data = df_x)
 # exterior negativo? ruido?
 round((exp(coef(lm7))-1)*100,2)
 
@@ -169,7 +177,13 @@ summary(lm4)
 summary(lm5)
 summary(lm6)
 summary(lm7)
+
+# x = lm(log_price ~ barri_playa, data = df_x)
 # 
+# summary(x)
+# vif(x)
+
+
 # ggplot(data_idealista,aes(rooms2,log_price)) + geom_violin()
 # 
 # ggplot(data_idealista,aes(año)) + geom_bar()
@@ -221,8 +235,10 @@ data_cook = data_cook[data_cook$cookd < 0.002,]
 # lm3 <- lm(reformulate(regressors,"log_price"),
 #           data_cook)
 
-lm_cook <- lm(log_price ~ 1 + barri + square_mt + asc + rooms2 + wcx + terraza + exterior + amueblado +
-                flag_planta + aire + calef, data = data_cook)
+lm_cook <- lm(log_price ~ 1 + barri + square_mt + asc + rooms2 + wc2 + terraza + exterior + amueblado +
+                flag_planta + aire + calef
+              + lujo
+              , data = data_cook)
 
 summary(lm_cook)
 
@@ -230,26 +246,34 @@ vif(lm_cook)
 
 plot(lm_cook,ask=FALSE)
 
+# Save data cook ----------------------------------------------------------
+
+date_to_save <- str_extract(path_modelling, "\\d{4}-\\d{2}-\\d{2}")
+
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_lm_cook_",date_to_save,".RDS")
+
+saveRDS(data_cook,file=path_to_save)
+
+print(path_to_save)
+
 
 # predict new dataset -----------------------------------------------------
 
-data_predict = "2023-06-05"
+if (data_predict == data_date){
+  stop("Modelling and predicting same dataset")
+}
 
-path_predict = paste0("data_modelling_",data_predict,".RDS")
+# path_predict = paste0("data_modelling_",data_predict,".RDS")
+path_predict = paste0("data_lm_cook_",data_predict,".RDS")
 
 predict_sample <- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista',path_predict))
 
+table(predict_sample$wc2)
+table(predict_sample$wc)
+
 predict_sample$rooms2 <- as.factor(predict_sample$rooms2)
 
-
-predict_sample = predict_sample %>%
-  dplyr::mutate(wcx = ifelse(wc >= 4, "4 o mas", wc),
-                wcx = ifelse(wc == 3, "3", wcx),
-                wcx = ifelse(wc == 2, "2", wcx),
-                wcx = ifelse(wc == 1, "1", wcx)
-  )
-
-predict_sample = predict_sample %>% filter(lujo == 0)
+# predict_sample = predict_sample %>% filter(lujo == 0)
 
 predict_sample = predict_sample %>% filter(barri != "Ciutat Meridiana") # removing Ciutat Meridiana
 
@@ -261,6 +285,7 @@ real_values <- exp(predict_sample$log_price)
 
 # Compute a measure of predictive performance
 RMSE <- sqrt(mean((predictions - real_values)^2))
+print(RMSE)
 
 plot(real_values,predictions)
 
@@ -269,22 +294,9 @@ predict_sample$y_tilde = predictions
 
 
 names(predict_sample)
-predict_sample %>% ggplot(aes(x=price,y=y_tilde,color = as.factor(barri))) + geom_jitter(alpha=0.5,shape = 1) +
-  geom_smooth(method = 'lm',se = FALSE) +
-  facet_wrap(vars(distrito2)) +
-  theme_bw()
-
-
-print(RMSE)
 
 rsquared = 1 - (sum((real_values - predictions)^2)/sum((real_values - mean(real_values))^2))
 
+print(rsquared)
 
-# Save data cook ----------------------------------------------------------
-
-date_to_save <- str_extract(path_modelling, "\\d{4}-\\d{2}-\\d{2}")
-
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_lm_cook_",date_to_save,".RDS")
-
-saveRDS(data_cook,file=path_to_save)
 
