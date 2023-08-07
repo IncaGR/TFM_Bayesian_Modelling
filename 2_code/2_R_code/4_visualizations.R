@@ -1,10 +1,12 @@
-
 library(tidyverse)
 library(broom.mixed)
+library(car)
+
+theme_set(theme_minimal())
 
 # 4. Visualization --------------------------------------------------------
 
-data_idealista <- readRDS(here::here('1_data','2_data_Idealista','data_modelling_2023-05-03.RDS'))
+data_idealista <- readRDS('1_data/2_data_Idealista/data_modelling_2023-05-03.RDS')
 
 colnames(data_idealista)
 
@@ -158,3 +160,75 @@ ggplot(df_model) +
   scale_x_continuous(breaks = 0:1) +
   theme(legend.position = "bottom")
 
+
+# lm coeff ----------------------------------------------------------------
+
+model_path = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/model_cook_2023-05-03.RDS")
+
+model_cook = readRDS(model_path)
+
+
+vif(model_cook)
+
+# Calcular el VIF
+vif_values <- vif(model_cook)
+
+# Convertirlo en un marco de datos
+vif_df <- data.frame(vif_values)
+
+vif_df$variables <- row.names(vif_df)
+
+colnames(vif_df) <- c("VIF","df","VIF_ajustado","variables")
+
+vif_df = vif_df %>% select(variables,VIF,df,VIF_ajustado)
+
+
+# plot model --------------------------------------------------------------
+
+coefs <- tidy(model_cook, conf.int = TRUE)
+
+# Identifica las variables que corresponden a los barrios
+coefs$term_group <- ifelse(grepl("^barri", coefs$term), "barri", "other")
+
+# Organiza los términos primero por el grupo (barri u other) y luego alfabéticamente
+coefs <- coefs %>%
+  arrange(term_group, term)
+
+coefs = coefs %>% filter(!grepl("^barri|(Intercept)",coefs$term))
+
+# Elimina la columna term_group ya que ya no la necesitamoshttp://127.0.0.1:41615/graphics/plot_zoom_png?width=1920&height=1027
+coefs$term_group <- NULL
+
+# Convierte la variable term en una variable categórica con el orden específico
+coefs$term <- factor(coefs$term, levels = coefs$term)
+
+# Crea el gráfico
+ggplot(coefs, aes(x = term, y = estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Variables", y = "Estimación", title = "Coeficientes e Intervalos de Confianza del 95%")
+
+
+# summary(model_cook)
+
+coefs
+
+library(xtable)
+print(xtable(coefs), type = "latex")
+
+
+library(knitr)
+
+variables_description <- data.frame(
+  Variable = c("log_price", "barri", "square_mt", "asc", "rooms2", "new_planta", "flag_planta", "wc2", "terraza", "exterior", "amueblado", "lujo"),
+  Description = c("Logarithm of Price", "Neighborhood", "Square Meters", "Elevator", "Number of Rooms", "New Floor", "Flag Floor", "Number of Bathrooms", "Terrace", "Exterior", "Furnished", "Luxury"),
+  Type = c("Dependent", rep("Independent", 11)),
+  DataType = c("Numeric", "Categorical", "Numeric", "Binary", "Numeric", "Binary", "Binary", "Numeric", "Binary", "Binary", "Binary", "Binary")
+)
+
+# latex_table <- kable(variables_description, format = "latex", booktabs = TRUE, caption = "Description of the Variables in the Model")
+
+xtable(variables_description, type = 'latex')
+
+print(latex_table)

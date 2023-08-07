@@ -215,21 +215,14 @@ dim(df_x[df_x$cookd>0.002,])
 plot(cooks.distance(lm7))
 abline(h = 4*mean(cooksd, na.rm=T), col="red") 
 
-# outlierTest(lm1)
-# cook_test
 
-# cook_test = data_idealista[data_idealista$cookd >(4*mean(cooksd, na.rm=T)),]
-
-# data_cook = data_idealista[data_idealista$cookd < 0.005,]
-# data_cook = data_idealista[data_idealista$cookd < 0.01,]
-
-# test <- c(1479,2777,2825)
-
-# data_cook = data_idealista[-test,]
-view(df_x[df_x$cookd>0.005,])
+# check .005
+# view(df_x[df_x$cookd>0.005,])
 
 data_cook = df_x[df_x$cookd < 0.005,]
-view(data_cook[data_cook$cookd > 0.002,])
+
+# check .002
+# view(data_cook[data_cook$cookd > 0.002,])
 
 data_cook = data_cook[data_cook$cookd < 0.002,]
 
@@ -243,37 +236,14 @@ lm_cook <- lm(log_price ~ 1 + barri + square_mt + asc + rooms2 + wc2 + terraza +
 
 summary(lm_cook)
 
-vif(lm_cook)
+as_tibble(vif(lm_cook))
+
+as.data.frame(vif(lm_cook))
+
+
 
 plot(lm_cook,ask=FALSE)
 
-
-
-# plot model --------------------------------------------------------------
-
-coefs <- tidy(lm_cook, conf.int = TRUE)
-
-# Identifica las variables que corresponden a los barrios
-coefs$term_group <- ifelse(grepl("^barri", coefs$term), "barri", "other")
-
-# Organiza los términos primero por el grupo (barri u other) y luego alfabéticamente
-coefs <- coefs %>%
-  arrange(term_group, term)
-
-coefs = coefs %>% filter(!grepl("^barri|(Intercept)",coefs$term))
-
-# Elimina la columna term_group ya que ya no la necesitamoshttp://127.0.0.1:41615/graphics/plot_zoom_png?width=1920&height=1027
-coefs$term_group <- NULL
-
-# Convierte la variable term en una variable categórica con el orden específico
-coefs$term <- factor(coefs$term, levels = coefs$term)
-
-# Crea el gráfico
-ggplot(coefs, aes(x = term, y = estimate)) +
-  geom_point() +
-  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Variables", y = "Estimación", title = "Coeficientes e Intervalos de Confianza del 95%")
 
 # Save data cook ----------------------------------------------------------
 
@@ -283,7 +253,12 @@ path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Ideal
 
 saveRDS(data_cook,file=path_to_save)
 
+save_model = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/model_cook_",date_to_save,".RDS")
+
+saveRDS(lm_cook,file=save_model)
+
 print(path_to_save)
+print(save_model)
 
 
 # predict new dataset -----------------------------------------------------
