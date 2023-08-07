@@ -178,6 +178,7 @@ summary(lm5)
 summary(lm6)
 summary(lm7)
 
+
 # x = lm(log_price ~ barri_playa, data = df_x)
 # 
 # summary(x)
@@ -245,6 +246,34 @@ summary(lm_cook)
 vif(lm_cook)
 
 plot(lm_cook,ask=FALSE)
+
+
+
+# plot model --------------------------------------------------------------
+
+coefs <- tidy(lm_cook, conf.int = TRUE)
+
+# Identifica las variables que corresponden a los barrios
+coefs$term_group <- ifelse(grepl("^barri", coefs$term), "barri", "other")
+
+# Organiza los términos primero por el grupo (barri u other) y luego alfabéticamente
+coefs <- coefs %>%
+  arrange(term_group, term)
+
+coefs = coefs %>% filter(!grepl("^barri|(Intercept)",coefs$term))
+
+# Elimina la columna term_group ya que ya no la necesitamoshttp://127.0.0.1:41615/graphics/plot_zoom_png?width=1920&height=1027
+coefs$term_group <- NULL
+
+# Convierte la variable term en una variable categórica con el orden específico
+coefs$term <- factor(coefs$term, levels = coefs$term)
+
+# Crea el gráfico
+ggplot(coefs, aes(x = term, y = estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Variables", y = "Estimación", title = "Coeficientes e Intervalos de Confianza del 95%")
 
 # Save data cook ----------------------------------------------------------
 

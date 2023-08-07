@@ -14,4 +14,5 @@ data_cook$barri <- as.factor(data_cook$barri)
 
 names(data_cook)
 
-stan_lmer(log_price ~ log(square_mt) + (1))
+stan_lmer(log_price ~ log(square_mt) + (1|barri), data = data_cook) # also use chains...
+
