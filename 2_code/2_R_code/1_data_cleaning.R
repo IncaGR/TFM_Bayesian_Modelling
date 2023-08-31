@@ -3,6 +3,7 @@ library(here)
 library(car)
 # library(dplyr)
 library(lubridate)
+library(fastDummies)
 # library(stringr)
 
 getwd()
@@ -130,7 +131,7 @@ table(data_idealista$wc)
 
 
 data_idealista = data_idealista %>%
-  dplyr::mutate(wc2 = ifelse(wc >= 4, "4 o mas", wc),
+  dplyr::mutate(wc2 = ifelse(wc >= 4, "4", wc),
                 wc2 = ifelse(wc == 3, "3", wc2),
                 wc2 = ifelse(wc == 2, "2", wc2),
                 wc2 = ifelse(wc == 1, "1", wc2)
@@ -140,7 +141,9 @@ table(data_idealista$wc2)
 
 # unique(pisos_2$wc2)
 
-data_idealista$wc2 <- factor(x = data_idealista$wc2, levels = c("1","2","3","4 o mas"))
+data_idealista$wc2 <- factor(x = data_idealista$wc2, levels = c("1","2","3","4"))
+
+data_idealista = dummy_cols(data_idealista, select_columns = "wc2")
 
 # str(pisos_2$wc2)
 
@@ -154,16 +157,18 @@ ggplot(data_idealista, aes(log(square_mt))) +
 table(data_idealista$rooms)
 
 data_idealista = data_idealista%>%
-  dplyr::mutate(rooms2 = ifelse(rooms >= 4, "4 o mas", rooms),
+  dplyr::mutate(rooms2 = ifelse(rooms >= 4, "4", rooms),
                 rooms2 = ifelse(rooms == 3, "3", rooms2),
                 rooms2 = ifelse(rooms == 2, "2", rooms2),
                 rooms2 = ifelse(rooms  == 1, "1", rooms2),
-                rooms2 = ifelse(rooms == 0, "0 estudio", rooms2)
+                rooms2 = ifelse(rooms == 0, "0", rooms2)
   )
 
 table(data_idealista$rooms2)
 
-data_idealista$rooms2 <- factor(x = data_idealista$rooms2, levels = c("0 estudio","1","2","3","4 o mas"))
+data_idealista$rooms2 <- factor(x = data_idealista$rooms2, levels = c("0","1","2","3","4"))
+data_idealista = dummy_cols(data_idealista, select_columns = "rooms2")
+
 data_idealista$log_price <- log(data_idealista$price)
 
 ggplot(data_idealista,aes(x = (rooms2), y = price)) + 

@@ -4,9 +4,12 @@ library(here)
 library(broom)
 library(broom.mixed)
 
+library(fastDummies)
+
 
 
 # Constants ---------------------------------------------------------------
+MAKE_PREDICTIONS = FALSE
 
 # MODELLING DATE
 data_date = "2023-05-03"
@@ -23,6 +26,8 @@ data_idealista <- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_da
 
 data_idealista$rooms2 <- as.factor(data_idealista$rooms2)
 
+data_idealista$log_smt <- log(data_idealista$square_mt)
+
 # data_idealista$rooms_ord <- factor(data_idealista$rooms2,ordered = T)
 
 unique(data_idealista$distrito2)
@@ -36,7 +41,7 @@ data_idealista = data_idealista %>% mutate(barri_playa = ifelse(barri %in% c("la
 # data_idealista %>% mutate(barri_playa = ifelse(barri %in% c("Distrito Ciutat Vella",
 #                                                                                 "Distrito Ciutat Vella"),1,0))
 
-# data_idealista = data_idealista %>% filter(lujo == 0)
+
 
 regressors<-c(
   # "barri",
@@ -80,6 +85,8 @@ regressors<-c(
   "mean_income",
   "barri_playa"
 )
+
+
 
 # data_idealista[is.na(data_idealista$n_c_comercials),]$n_c_comercials <- 0
 
@@ -160,8 +167,23 @@ df_x = df_x %>% mutate(n_arbres_viaris_barri = ifelse(barri == "el Coll",0,n_arb
 #                       + 1","log_price"),
 #           df_x,singular.ok = TRUE) # no me cuadra rooms -
 
-lm7 <- lm(log_price ~ 1 + barri + square_mt + asc + rooms2 + new_planta + 
-            flag_planta + wc2 + terraza + exterior + amueblado
+names(df_x)
+
+lm7 <- lm(log_price ~ 1 + barri + log_smt + asc + 
+            # rooms2_0 +
+            rooms2_1 +
+            rooms2_2 +
+            rooms2_3 +
+            rooms2_4 +
+            # + new_planta + 
+            # flag_planta +
+            # wc2_1 +
+            wc2_2 +
+            wc2_3 +
+            wc2_4 +
+            + terraza +
+            # exterior +
+            amueblado
           + lujo
           , data = df_x)
 # exterior negativo? ruido?
@@ -229,8 +251,21 @@ data_cook = data_cook[data_cook$cookd < 0.002,]
 # lm3 <- lm(reformulate(regressors,"log_price"),
 #           data_cook)
 
-lm_cook <- lm(log_price ~ 1 + barri + square_mt + asc + rooms2 + wc2 + terraza + exterior + amueblado +
-                flag_planta + aire + calef
+lm_cook <- lm(log_price ~ 1 + barri + log_smt + asc + 
+                # rooms2_0 +
+                rooms2_1 +
+                rooms2_2 +
+                rooms2_3 +
+                rooms2_4 +
+                # + new_planta + 
+                # flag_planta +
+                # wc2_1 +
+                wc2_2 +
+                wc2_3 +
+                wc2_4 +
+                + terraza +
+                # exterior +
+                amueblado
               + lujo
               , data = data_cook)
 
@@ -243,6 +278,24 @@ as.data.frame(vif(lm_cook))
 
 
 plot(lm_cook,ask=FALSE)
+
+modelo_cook_tidy = tidy(lm_cook)
+
+# names(modelo_cook_tidy)
+
+modelo_cook_tidy %>% filter(!grepl("^barri|(Intercept)",modelo_cook_tidy$term))
+
+
+#TODO: mover to visualizations
+ggplot(modelo_cook_tidy %>% filter(!grepl("^barri|(Intercept)",modelo_cook_tidy$term)), aes(x = term, y = estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = estimate - std.error, 
+                    ymax = estimate + std.error), 
+                width = 0.2) +
+  coord_flip() +
+  ggtitle("Coefficients and Standard Deviations") +
+  ylab("Coefficient") +
+  xlab("Variable")
 
 
 # Save data cook ----------------------------------------------------------
@@ -260,11 +313,17 @@ saveRDS(lm_cook,file=save_model)
 print(path_to_save)
 print(save_model)
 
+# save coefficients in tidy format
+
+save_tidy = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/model_cook_tidy.RDS")
+
+saveRDS(modelo_cook_tidy,file=save_tidy)
+
 
 # predict new dataset -----------------------------------------------------
 
-if (data_predict == data_date){
-  stop("Modelling and predicting same dataset")
+if (!(data_predict == data_date & MAKE_PREDICTIONS)){
+  stop("Modelling and predicting same dataset or MAKE_PREDICTIONS equal FALSE")
 }
 
 # path_predict = paste0("data_modelling_",data_predict,".RDS")

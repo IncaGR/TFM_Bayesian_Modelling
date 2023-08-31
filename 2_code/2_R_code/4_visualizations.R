@@ -176,12 +176,16 @@ vif_values <- vif(model_cook)
 # Convertirlo en un marco de datos
 vif_df <- data.frame(vif_values)
 
-vif_df$variables <- row.names(vif_df)
+# vif_df$variables <- row.names(vif_df)
 
-colnames(vif_df) <- c("VIF","df","VIF_ajustado","variables")
+colnames(vif_df) <- c("VIF","df","VIF_ajustado")
 
-vif_df = vif_df %>% select(variables,VIF,df,VIF_ajustado)
+# vif_df = vif_df %>% select(variables,VIF,df,VIF_ajustado)
 
+latex_table <- xtable(vif_df, caption = "Factor de la inflación de la varianza")
+
+# Imprimir la tabla en LaTeX
+print(latex_table, type = "latex")
 
 # plot model --------------------------------------------------------------
 
@@ -232,3 +236,60 @@ variables_description <- data.frame(
 xtable(variables_description, type = 'latex')
 
 print(latex_table)
+
+
+
+# Model comparison viz ----------------------------------------------------
+
+linear_model = readRDS(paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/model_cook_tidy.RDS"))
+# 
+# pooled <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_pooled_tidy.RDS") # pooled 1325.239, 0.5236905
+# no_pooled <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_no_pooled.RDS") # no pooled 1435.512
+# hier_1 <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2.RDS") # 1385.68, 0.479253
+
+path = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_pooled.RDS")
+
+pooled = readRDS(path)
+
+path = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_no_pooled.RDS")
+
+no_pooled = readRDS(path)
+
+path = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2.RDS")
+
+hier_1 <- readRDS(path)
+
+
+tidy_pooled = tidyMCMC(pooled,rhat = T)
+tidy_no_pooled = tidyMCMC(no_pooled,rhat = T)
+tidy_hier_1 = tidyMCMC(hier_1,rhat = T)
+
+
+linear_model = linear_model %>% filter(!grepl("^barri|(Intercept)",linear_model$term))
+
+tidy_pooled = tidy_pooled %>% filter(!grepl("^b0|sigma_y|lp_",tidy_pooled$term)) %>% mutate(term = ifelse(term == "log_mt","log_smt",term))
+
+tidy_no_pooled = tidy_no_pooled  %>% filter(!grepl("^b0|sigma_y|lp_",tidy_no_pooled$term))
+
+tidy_hier_1 = tidy_hier_1 %>% filter(!grepl("^b0|sigma_y|lp_|mu_a|sigma_a",tidy_hier_1$term))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
