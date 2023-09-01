@@ -275,18 +275,27 @@ tidy_hier_1 = tidy_hier_1 %>% filter(!grepl("^b0|sigma_y|lp_|mu_a|sigma_a",tidy_
 
 
 
+linear_model$model = "lm"
+tidy_pooled$model = "pooled"
+tidy_no_pooled$model = "no_pooled"
+tidy_hier_1$model = "hierarchical"
 
 
+viz_lm = linear_model %>% select(term,estimate,std.error,model)
+viz_pool = tidy_pooled %>% select(term,estimate,std.error,model)
+viz_no_pool = tidy_no_pooled %>% select(term,estimate,std.error,model)
+viz_hier = tidy_hier_1 %>% select(term,estimate,std.error,model)
+
+viz = rbind(viz_lm,viz_pool,viz_no_pool,viz_hier)
 
 
-
-
-
-
-
-
-
-
+ggplot(viz, aes(x = term, y = estimate, group = model, color = model)) +
+  geom_point() +
+  # geom_line() +
+  geom_errorbar(aes(ymin = estimate - std.error, ymax = estimate + std.error), width = 0.2) +
+  ggtitle("Estimate with Standard Error of Different Models") +
+  xlab("Term") +
+  ylab("Estimate") +  coord_flip()
 
 
 

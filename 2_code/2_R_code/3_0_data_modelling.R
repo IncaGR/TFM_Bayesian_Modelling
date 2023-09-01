@@ -12,8 +12,8 @@ library(fastDummies)
 MAKE_PREDICTIONS = FALSE
 
 # MODELLING DATE
-data_date = "2023-05-03"
-# data_date = "2023-06-05" # test sample
+# data_date = "2023-05-03"
+data_date = "2023-06-05" # test sample
 
 # PREDICT DATE
 data_predict = "2023-06-05"
@@ -22,7 +22,7 @@ data_predict = "2023-06-05"
 
 path_modelling = paste0("data_modelling_",data_date,".RDS")
 
-data_idealista <- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista',path_modelling))
+data_idealista <- readRDS(here::here('1_data','2_data_Idealista',path_modelling))
 
 data_idealista$rooms2 <- as.factor(data_idealista$rooms2)
 

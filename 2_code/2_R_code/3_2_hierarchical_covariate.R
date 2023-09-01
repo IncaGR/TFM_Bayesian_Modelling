@@ -41,22 +41,48 @@ names(data_cook)
 
 N= nrow(data_cook)
 barri_name <- unique(data_cook$barri)
-barri <- as.integer((data_cook$barri))
+barri <- as.numeric(data_cook$barri)
 J <- length(unique(barri))
 y <- data_cook$log_price
 x1 <- log(data_cook$square_mt)
-# x1 <- data_cook$square_mt # test no log NO USE TAKE MUCH TIME
-x2 <- data_cook$rooms
-# x2 <- data_cook$rooms2 # test no working only numeric vals
-x3 <- data_cook$wc # test other wc2, wcx
-# x4 <- data_cook$lujo
-x5 <- data_cook$asc
-terraza <- data_cook$terraza
-# playa <- data_cook$barri_playa
+x2 <- data_cook$rooms2_1
+x3 <- data_cook$rooms2_2
+x4 <- data_cook$rooms2_3
+x5 <- data_cook$rooms2_4
+x6 <- data_cook$asc
+x7 <- data_cook$wc2_2
+x8 <- data_cook$wc2_3
+x9 <- data_cook$wc2_4
+x10 <- data_cook$terraza
+x11 <- data_cook$amueblado
+# x12 <- data_cook$lujo
+
 mean_income <- data_cook %>%
-group_by(barri) %>%
-summarise(mean_income = first(log(mean_income))) %>%
-pull(mean_income)
+  group_by(barri) %>%
+  summarise(mean_income = first(log(mean_income))) %>%
+  pull(mean_income)
+
+
+data_list <- list(
+  N = N,
+  y = y,
+  J = J,
+  x1 = x1,
+  x2 = x2,
+  x3 = x3,
+  x4 = x4,
+  x5 = x5,
+  x6 = x6,
+  x7 = x7,
+  x8 = x8,
+  x9 = x9,
+  x10 = x10,
+  x11 = x11,
+  # x12 = x12,
+  barri = barri,
+  mean_income = mean_income
+)
+
 # mean_atur <- data_cook %>%
 #   group_by(barri) %>%
 #   summarise(mean_atur = first(mean_perc_atur)) %>%
@@ -67,75 +93,148 @@ pull(mean_income)
 #   summarise(playa = first(barri_playa)) %>%
 #   pull(playa)
 
-data_list <- list(
-  N = N,
-  J = J,
-  y = y,
-  x1 = x1, # log square mt
-  x2 = x2, # nº rooms
-  x3 = x3, # nº wc
-  # x4 = x4, # lujo
-  x5 = x5,
-  terraza = terraza,
-  # playa = playa,
-  barri = barri,
-  mean_income = mean_income
-  # ,mean_atur = mean_atur
-  
-)
+# data_list <- list(
+#   N = N,
+#   J = J,
+#   y = y,
+#   x1 = x1, # log square mt
+#   x2 = x2, # nº rooms
+#   x3 = x3, # nº wc
+#   # x4 = x4, # lujo
+#   x5 = x5,
+#   terraza = terraza,
+#   # playa = playa,
+#   barri = barri,
+#   
+#   # ,mean_atur = mean_atur
+#   
+# )
 
 
 # Varying intercept model -------------------------------------------------
 
+# model_code <- "
+# data {
+#   int<lower=0> N;
+#   int<lower=0> J;
+#   vector[N] y; // log price
+#   real x1[N]; // log square mt
+#   int x2[N]; // nº rooms
+#   int x3[N]; // nº wc
+#   // int x4[N]; // binari lujo
+#   int x5[N]; // binari elevator
+#   int terraza[N];
+#   int barri[N];
+#   // int playa[J]; no effect
+#   vector[J] mean_income;
+#   //vector[J] mean_atur; no effect
+# }
+# parameters {
+#   real a[J]; // intercept each barri
+#   real<lower=0> b; // log square mt
+#   real c; // nº rooms
+#   real<lower=0> d; // numeric nº wc
+#   //real<lower=0> e; // lujo
+#   real<lower=0> f; // asc
+#   real<lower=0> b6; // terraza
+#   real g_0;
+#   real g_1;
+#   // real g_2; no effect
+#   //real g_3; no effect
+#   real<lower=0> sigma_y;
+#   real<lower=0> sigma_a;
+# }
+# model {
+# 
+#   sigma_y ~ cauchy(0, 10);
+#   sigma_a ~ cauchy(0, 10);
+#   b ~ cauchy(0,2.5);
+#   c ~ cauchy(0,2.5);
+#   d ~ cauchy(0,2.5);
+#   //e ~ cauchy(0,2.5);
+#   f ~ cauchy(0,2.5);
+#   b6 ~ cauchy(0,2.5);
+#   for (j in 1:J)
+#     a[j] ~ normal(g_0 + g_1 * mean_income[j], sigma_a);
+#   for (n in 1:N)
+#     y[n] ~ normal(a[barri[n]] + b * x1[n] + c * x2[n] + d * x3[n] 
+#     //+ e * x4[n]
+#      + f * x5[n] + b6 * terraza[n] , sigma_y);
+# }
+# "
 model_code <- "
 data {
   int<lower=0> N;
   int<lower=0> J;
-  vector[N] y; // log price
-  real x1[N]; // log square mt
-  int x2[N]; // nº rooms
-  int x3[N]; // nº wc
-  // int x4[N]; // binari lujo
-  int x5[N]; // binari elevator
-  int terraza[N];
+  vector[N] y;
+  real x1[N];
+  int x2[N];
+  int x3[N];
+  int x4[N];
+  int x5[N];
+  int x6[N];
+  int x7[N];
+  int x8[N];
+  int x9[N];
+  int x10[N];
+  int x11[N];
+  // int x12[N];
   int barri[N];
-  // int playa[J]; no effect
   vector[J] mean_income;
-  //vector[J] mean_atur; no effect
 }
 parameters {
-  real a[J]; // intercept each barri
-  real<lower=0> b; // log square mt
-  real c; // nº rooms
-  real<lower=0> d; // numeric nº wc
-  //real<lower=0> e; // lujo
-  real<lower=0> f; // asc
-  real<lower=0> b6; // terraza
+  real b0[J];
+  
+  real log_smt; // log square mt
+  real rooms2_1 ; // rooms
+  real rooms2_2; // rooms
+  real rooms2_3; // rooms
+  real rooms2_4; // rooms
+  real asc; // asc
+  real wc2_2; // wc
+  real wc2_3; // wc
+  real wc2_4; // wc
+  real terraza;
+  real amueblado;
+  // real lujo; 
+  
   real g_0;
   real g_1;
-  // real g_2; no effect
-  //real g_3; no effect
+  
   real<lower=0> sigma_y;
   real<lower=0> sigma_a;
 }
 model {
-
   sigma_y ~ cauchy(0, 10);
   sigma_a ~ cauchy(0, 10);
-  b ~ cauchy(0,2.5);
-  c ~ cauchy(0,2.5);
-  d ~ cauchy(0,2.5);
-  //e ~ cauchy(0,2.5);
-  f ~ cauchy(0,2.5);
-  b6 ~ cauchy(0,2.5);
+ // g_0 ~ cauchy(0,10);
+ // g_1 ~cauchy(0,10);
+  log_smt ~ cauchy(0,2.5);
+  rooms2_1 ~ cauchy(0,2.5);
+  rooms2_2 ~ cauchy(0,2.5);
+  rooms2_3 ~ cauchy(0,2.5);
+  rooms2_4 ~ cauchy(0,2.5);
+  asc ~ cauchy(0,2.5);
+  wc2_2 ~ cauchy(0,2.5);
+  wc2_3 ~ cauchy(0,2.5);
+  wc2_4 ~ cauchy(0,2.5);
+  terraza ~ cauchy(0,2.5);
+  amueblado ~ cauchy(0,2.5);
+  // lujo ~ cauchy(0,2.5);
+
   for (j in 1:J)
-    a[j] ~ normal(g_0 + g_1 * mean_income[j], sigma_a);
+    b0[j] ~ normal(g_0 + g_1 * mean_income[j], sigma_a);
+  
   for (n in 1:N)
-    y[n] ~ normal(a[barri[n]] + b * x1[n] + c * x2[n] + d * x3[n] 
-    //+ e * x4[n]
-     + f * x5[n] + b6 * terraza[n] , sigma_y);
+    y[n] ~ normal(b0[barri[n]] + log_smt * x1[n] + rooms2_1 * x2[n] + 
+              rooms2_2 * x3[n] + rooms2_3 * x4[n] + rooms2_4 * x5[n] + 
+              asc * x6[n] + wc2_2 * x7[n] + wc2_3 * x8[n] + wc2_4 * x9[n] + 
+              terraza * x10[n] + amueblado * x11[n]
+              // + lujo * x12[n]
+              , sigma_y);
 }
 "
+
 
 
 # Varying slope change ----------------------------------------------------
@@ -196,7 +295,7 @@ translate = stanc(model_code  = model_code)
 model = stan_model(stanc_ret = translate)
 
 # Fit the model to the data
-fit_4 <- sampling(model, data = data_list, chains = 4, iter =6000, verbose = TRUE, seed = 132) # 4000?
+fit_4 <- sampling(model, data = data_list, chains = 4, iter =5000, verbose = TRUE, seed = 132) # 4000?
 
 # ## Convergence analysis
 print(fit_4) # Cuando hay porblemas de multicolinearidad max depth sube y r-hat
@@ -215,7 +314,8 @@ print(fit_4) # Cuando hay porblemas de multicolinearidad max depth sube y r-hat
 # path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_5.RDS") # playa
 # path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_6.RDS") # intercept: playa+renta
 # path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_7.RDS") # varying the slope # no converge
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_8.RDS") # no lujo data
+# path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_8.RDS") # no lujo data
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS") # all variables
 
 
 saveRDS(fit_4, path_to_save)
@@ -223,7 +323,7 @@ saveRDS(fit_4, path_to_save)
 
 # read fit ----------------------------------------------------------------
 
-fit_4 <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_8.RDS")
+fit_4 <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")
 
 # fit_4
 # predicting new unit -----------------------------------------------------
