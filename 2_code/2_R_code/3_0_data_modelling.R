@@ -9,14 +9,14 @@ library(fastDummies)
 
 
 # Constants ---------------------------------------------------------------
-MAKE_PREDICTIONS = FALSE
+MAKE_PREDICTIONS = TRUE
 
 # MODELLING DATE
-# data_date = "2023-05-03"
-data_date = "2023-06-05" # test sample
+data_date = "2023-05-03"
+# data_date = "2023-06-05" # test sample
 
 # PREDICT DATE
-data_predict = "2023-06-05"
+# data_predict = "2023-06-05" # movido a predicciones
 
 # upload data ready for modelling ------------------------------------------
 
@@ -321,45 +321,46 @@ saveRDS(modelo_cook_tidy,file=save_tidy)
 
 
 # predict new dataset -----------------------------------------------------
+# movido a prediciones
 
-if (!(data_predict == data_date & MAKE_PREDICTIONS)){
-  stop("Modelling and predicting same dataset or MAKE_PREDICTIONS equal FALSE")
-}
-
-# path_predict = paste0("data_modelling_",data_predict,".RDS")
-path_predict = paste0("data_lm_cook_",data_predict,".RDS")
-
-predict_sample <- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista',path_predict))
-
-table(predict_sample$wc2)
-table(predict_sample$wc)
-
-predict_sample$rooms2 <- as.factor(predict_sample$rooms2)
-
-# predict_sample = predict_sample %>% filter(lujo == 0)
-
-predict_sample = predict_sample %>% filter(barri != "Ciutat Meridiana") # removing Ciutat Meridiana
-
-predictions = exp(predict.lm(lm_cook,predict_sample))
-
-
-# Compute the actual mean price for each observation in the test data
-real_values <- exp(predict_sample$log_price)
-
-# Compute a measure of predictive performance
-RMSE <- sqrt(mean((predictions - real_values)^2))
-print(RMSE)
-
-plot(real_values,predictions)
-
-
-predict_sample$y_tilde = predictions
-
-
-names(predict_sample)
-
-rsquared = 1 - (sum((real_values - predictions)^2)/sum((real_values - mean(real_values))^2))
-
-print(rsquared)
-
-
+# if (!(data_predict != data_date & MAKE_PREDICTIONS)){
+#   stop("Modelling and predicting same dataset or MAKE_PREDICTIONS equal FALSE")
+# }
+# 
+# # path_predict = paste0("data_modelling_",data_predict,".RDS")
+# path_predict = paste0("data_lm_cook_",data_predict,".RDS")
+# 
+# predict_sample <- readRDS(here::here('1_data','2_data_Idealista',path_predict))
+# 
+# table(predict_sample$wc2)
+# table(predict_sample$wc)
+# 
+# predict_sample$rooms2 <- as.factor(predict_sample$rooms2)
+# 
+# # predict_sample = predict_sample %>% filter(lujo == 0)
+# 
+# predict_sample = predict_sample %>% filter(barri != "Ciutat Meridiana") # removing Ciutat Meridiana
+# 
+# predictions = exp(predict.lm(lm_cook,predict_sample))
+# 
+# 
+# # Compute the actual mean price for each observation in the test data
+# real_values <- exp(predict_sample$log_price)
+# 
+# # Compute a measure of predictive performance
+# RMSE <- sqrt(mean((predictions - real_values)^2))
+# print(RMSE)
+# 
+# plot(real_values,predictions)
+# 
+# 
+# predict_sample$y_tilde = predictions
+# 
+# 
+# names(predict_sample)
+# 
+# rsquared = 1 - (sum((real_values - predictions)^2)/sum((real_values - mean(real_values))^2))
+# 
+# print(rsquared)
+# 
+# 

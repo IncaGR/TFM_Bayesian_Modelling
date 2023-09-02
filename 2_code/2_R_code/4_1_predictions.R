@@ -8,6 +8,8 @@ library(broom.mixed)
 
 # read test data ----------------------------------------------------------
 
+set.seed(125)
+
 # para las predicciones vamos a comprar r-2 y RMSE de los 4 modelos.
 # Bayesian pooled, no pooled, hierarchical y hierarchical covariable.
 
@@ -72,7 +74,7 @@ y <- exp(test_data$log_price)
 
 # Create df
 
-df_metrics = data.frame(model = c('pooled','no_pooled','hierarchical','hierarchical_cov'), r_2 = c(0,0,0,0),rmse = c(0,0,0,0))
+df_metrics = data.frame(model = c('lm','pooled','no_pooled','hierarchical','hierarchical_cov'), r_2 = c(0,0,0,0,0),rmse = c(0,0,0,0,0))
 
 
 
@@ -138,7 +140,7 @@ if(NO_POOLED){
   n.test <- nrow(test_data)
   y.tilde <- matrix(0, nrow = n.sims, ncol = n.test)
   for (i in 1:n.test) {
-    print(i)
+    # print(i)
     y.tilde[,i] <- rnorm(n.sims, sims$b0[,test_data$barri[i]] 
                          + sims$log_smt * test_data$log_smt[i]
                          + sims$rooms2_1 * test_data$rooms2_1[i]
@@ -195,7 +197,7 @@ if(HIER){
   n.test <- nrow(test_data)
   y.tilde <- matrix(0, nrow = n.sims, ncol = n.test)
   for (i in 1:n.test) {
-    print(i)
+    # print(i)
     y.tilde[,i] <- rnorm(n.sims, sims$b0[,test_data$barri[i]] 
                          + sims$log_smt * log(test_data$square_mt[i]) 
                          + sims$rooms2_1 * test_data$rooms2_1[i]
@@ -256,7 +258,7 @@ if(HIER_COV){
   y.tilde <- matrix(0, nrow = n.sims, ncol = n.test)
   
   for (i in 1:n.test) {
-    print(i)
+    # print(i) # debug
     y.tilde[,i] <- rnorm(n.sims, sims$b0[,test_data$barri[i]] 
                          + sims$log_smt * log(test_data$square_mt[i]) 
                          + sims$rooms2_1 * test_data$rooms2_1[i]
@@ -301,10 +303,24 @@ if(HIER_COV){
 
 
 
-
-
 # TODO: guardar tabla de metricas y pasar a formato latex
 
+# LATEX:
+
+# \begin{tabular}{lccc}
+# \hline
+# model           & $r^2$  & rmse    \\
+# \hline
+# pooled          & 0.746  & 965.386 \\
+# no\_pooled      & 0.706  & 1039.901\\
+# hierarchical    & 0.623  & 1176.690\\
+# hierarchical\_cov & 0.712  & 1029.722\\
+# \hline
+# \end{tabular}
+
+
+
+# TODO: añadir modelo lineal a la tabla
 # TODO: mover a viz
 
 # plot(actual_means,predicted_means)
@@ -365,5 +381,55 @@ if(HIER_COV){
 # rsquared = 1 - (sum((actual_means - predicted_means)^2)/sum((actual_means - mean(actual_means))^2))
 # 
 # print(rsquared)
+
+# predict linear model -----------------------------------------------------
+
+# if (!(data_predict != data_date & MAKE_PREDICTIONS)){
+#   stop("Modelling and predicting same dataset or MAKE_PREDICTIONS equal FALSE")
+# }
+
+# path_predict = paste0("data_modelling_",data_predict,".RDS")
+# path_predict = paste0("data_lm_cook_",data_predict,".RDS")
+
+# predict_sample <- readRDS(here::here('1_data','2_data_Idealista',path_predict))
+
+# table(predict_sample$wc2)
+# table(predict_sample$wc)
+
+# predict_sample$rooms2 <- as.factor(predict_sample$rooms2)
+
+# predict_sample = predict_sample %>% filter(lujo == 0)
+
+lm_cook = readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/model_cook_2023-05-03.RDS")
+
+test_data = test_data %>% filter(barri != "Ciutat Meridiana") # removing Ciutat Meridiana
+
+predictions = exp(predict.lm(lm_cook,predict_sample))
+
+
+# Compute the actual mean price for each observation in the test data
+real_values <- exp(predict_sample$log_price)
+
+# Compute a measure of predictive performance
+RMSE <- sqrt(mean((predictions - real_values)^2))
+print(RMSE)
+
+plot(real_values,predictions)
+
+# predict_sample$y_tilde = predictions
+
+# names(predict_sample)
+
+rsquared = 1 - (sum((real_values - predictions)^2)/sum((real_values - mean(real_values))^2))
+
+print(rsquared)
+
+df_metrics[df_metrics$model == 'lm',]$r_2 = round(rsquared, 3)
+df_metrics[df_metrics$model == 'lm',]$rmse = round(RMSE, 3)
+
+print(df_metrics)
+
+
+
 
 
