@@ -49,6 +49,7 @@ fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_
 # parece que lujo esta muy correlacionada con otras variables, esto hace que el std.error sea muy elevado y al calcular 
 # rsquared me da infnito porque el coeficiente de lujo a veces da +-200.
 # probar quitar lujo
+# faltaba lujo ahora es el mejor modelo: 0.7114481, 1029.92
 
 # try variant in intercept and slope
 # try only no lujo observations
@@ -207,7 +208,7 @@ print(RMSE)
 
 # jerarquico rooms y wc binarias ------------------------------------------
 
-test_data = test_data %>% filter(barri != "Vilapicina i la Torre Llobeta")
+# test_data = test_data %>% filter(barri != "Vilapicina i la Torre Llobeta")
 
 # Generate predictions for the test data
 n.sims <- nrow(sims$b0)

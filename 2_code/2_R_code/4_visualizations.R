@@ -259,10 +259,15 @@ path = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_f
 
 hier_1 <- readRDS(path)
 
+path = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")
+
+hier_cov = readRDS(path)
+
 
 tidy_pooled = tidyMCMC(pooled,rhat = T)
 tidy_no_pooled = tidyMCMC(no_pooled,rhat = T)
 tidy_hier_1 = tidyMCMC(hier_1,rhat = T)
+tidy_hier_cov = tidyMCMC(hier_cov,rhat = T)
 
 
 linear_model = linear_model %>% filter(!grepl("^barri|(Intercept)",linear_model$term))
@@ -273,20 +278,22 @@ tidy_no_pooled = tidy_no_pooled  %>% filter(!grepl("^b0|sigma_y|lp_",tidy_no_poo
 
 tidy_hier_1 = tidy_hier_1 %>% filter(!grepl("^b0|sigma_y|lp_|mu_a|sigma_a",tidy_hier_1$term))
 
-
+tidy_hier_cov = tidy_hier_cov %>% filter(!grepl("^b0|sigma_y|lp_|mu_a|sigma_a|g_0|g_1",tidy_hier_cov$term))
 
 linear_model$model = "lm"
 tidy_pooled$model = "pooled"
 tidy_no_pooled$model = "no_pooled"
 tidy_hier_1$model = "hierarchical"
-
+tidy_hier_cov$model = "hierarchical_cov"
 
 viz_lm = linear_model %>% select(term,estimate,std.error,model)
 viz_pool = tidy_pooled %>% select(term,estimate,std.error,model)
 viz_no_pool = tidy_no_pooled %>% select(term,estimate,std.error,model)
 viz_hier = tidy_hier_1 %>% select(term,estimate,std.error,model)
+viz_hier_cov = tidy_hier_cov %>% select(term,estimate,std.error,model)
 
-viz = rbind(viz_lm,viz_pool,viz_no_pool,viz_hier)
+# viz = rbind(viz_lm,viz_pool,viz_no_pool,viz_hier,viz_hier_cov)
+viz = rbind(viz_hier,viz_hier_cov)
 
 
 ggplot(viz, aes(x = term, y = estimate, group = model, color = model)) +

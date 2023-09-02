@@ -23,12 +23,12 @@ data_date = "2023-05-03"
 
 path_modelling = paste0("data_lm_cook_",data_date,".RDS")
 
-data_cook<- readRDS(here::here('Desktop','1_projects','TFM','1_data','2_data_Idealista',path_modelling))
+data_cook<- readRDS(here::here('1_data','2_data_Idealista',path_modelling))
 
 data_cook$barri <- as.factor(data_cook$barri)
 
 # no lujo?
-data_cook = data_cook %>% filter(lujo == 0)
+# data_cook = data_cook %>% filter(lujo == 0)
 
 names(data_cook)
 # price hierarchical covariate --------------------------------------------
@@ -55,7 +55,7 @@ x8 <- data_cook$wc2_3
 x9 <- data_cook$wc2_4
 x10 <- data_cook$terraza
 x11 <- data_cook$amueblado
-# x12 <- data_cook$lujo
+x12 <- data_cook$lujo
 
 mean_income <- data_cook %>%
   group_by(barri) %>%
@@ -78,7 +78,7 @@ data_list <- list(
   x9 = x9,
   x10 = x10,
   x11 = x11,
-  # x12 = x12,
+  x12 = x12,
   barri = barri,
   mean_income = mean_income
 )
@@ -178,7 +178,7 @@ data {
   int x9[N];
   int x10[N];
   int x11[N];
-  // int x12[N];
+  int x12[N];
   int barri[N];
   vector[J] mean_income;
 }
@@ -196,7 +196,7 @@ parameters {
   real wc2_4; // wc
   real terraza;
   real amueblado;
-  // real lujo; 
+  real lujo; 
   
   real g_0;
   real g_1;
@@ -220,7 +220,7 @@ model {
   wc2_4 ~ cauchy(0,2.5);
   terraza ~ cauchy(0,2.5);
   amueblado ~ cauchy(0,2.5);
-  // lujo ~ cauchy(0,2.5);
+  lujo ~ cauchy(0,2.5);
 
   for (j in 1:J)
     b0[j] ~ normal(g_0 + g_1 * mean_income[j], sigma_a);
@@ -229,9 +229,7 @@ model {
     y[n] ~ normal(b0[barri[n]] + log_smt * x1[n] + rooms2_1 * x2[n] + 
               rooms2_2 * x3[n] + rooms2_3 * x4[n] + rooms2_4 * x5[n] + 
               asc * x6[n] + wc2_2 * x7[n] + wc2_3 * x8[n] + wc2_4 * x9[n] + 
-              terraza * x10[n] + amueblado * x11[n]
-              // + lujo * x12[n]
-              , sigma_y);
+              terraza * x10[n] + amueblado * x11[n] + lujo * x12[n], sigma_y);
 }
 "
 
@@ -295,6 +293,7 @@ translate = stanc(model_code  = model_code)
 model = stan_model(stanc_ret = translate)
 
 # Fit the model to the data
+
 fit_4 <- sampling(model, data = data_list, chains = 4, iter =5000, verbose = TRUE, seed = 132) # 4000?
 
 # ## Convergence analysis
@@ -315,7 +314,8 @@ print(fit_4) # Cuando hay porblemas de multicolinearidad max depth sube y r-hat
 # path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_6.RDS") # intercept: playa+renta
 # path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_7.RDS") # varying the slope # no converge
 # path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_8.RDS") # no lujo data
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS") # all variables
+path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS") # all variables # checkeo 
+# si lujo estaba en el dataset...
 
 
 saveRDS(fit_4, path_to_save)
