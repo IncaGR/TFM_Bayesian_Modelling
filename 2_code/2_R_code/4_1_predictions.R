@@ -8,6 +8,9 @@ library(broom.mixed)
 
 # read test data ----------------------------------------------------------
 
+# para las predicciones vamos a comprar r-2 y RMSE de los 4 modelos.
+# Bayesian pooled, no pooled, hierarchical y hierarchical covariable.
+
 data_date = "2023-06-05"
 
 path_modelling = paste0("data_lm_cook_",data_date,".RDS")
@@ -23,6 +26,7 @@ test_data = test_data[!is.na(test_data$price),]
 summary(test_data)
 
 y <- exp(test_data$log_price)
+
 
 # test_data = test_data %>% filter(lujo == 0)
 
@@ -45,7 +49,7 @@ y <- exp(test_data$log_price)
 # fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_8.RDS") # 662.9664 No tiene lujo
 
 
-fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")
+# fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")
 # parece que lujo esta muy correlacionada con otras variables, esto hace que el std.error sea muy elevado y al calcular 
 # rsquared me da infnito porque el coeficiente de lujo a veces da +-200.
 # probar quitar lujo
@@ -54,7 +58,7 @@ fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_
 # try variant in intercept and slope
 # try only no lujo observations
 
-fit
+# fit
 # summary(fit)
 
 # hier_1_tidy =  tidy(fit) 
@@ -65,188 +69,301 @@ fit
 # saveRDS(hier_1_tidy,file=save_tidy)
 
 # Extract the parameter samples from the fitted model
-sims <- rstan::extract(fit)
+
+# Create df
+
+df_metrics = data.frame(model = c('pooled','no_pooled','hierarchical','hierarchical_cov'), r_2 = c(0,0,0,0),rmse = c(0,0,0,0))
+
+
+
 
 
 # prediction of the pooles model ------------------------------------------
 
+POOLED = TRUE
 
-y_pred = mean(sims$barrio) + mean(sims$log_mt) * log(test_data$square_mt) + mean(sims$n_hab) * test_data$rooms
-y_pred = exp(y_pred)
-y <- exp(test_data$log_price)
-
-
-# Compute a measure of predictive performance
-RMSE <- sqrt(mean((y_pred - y)^2))
-
-print(RMSE)
-
-rsquared = 1 - (sum((y - y_pred)^2)/sum((y - mean(y))^2))
-
-print(rsquared)
+if(POOLED){   
+  
+  fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_pooled.RDS")
+  
+  sims <- rstan::extract(fit)
+  
+  y_pred = mean(sims$b0) + 
+    mean(sims$log_mt) * log(test_data$square_mt) + 
+    mean(sims$rooms2_1) * test_data$rooms2_1 +
+    mean(sims$rooms2_2) * test_data$rooms2_2 +
+    mean(sims$rooms2_3) * test_data$rooms2_3 +
+    mean(sims$rooms2_4) * test_data$rooms2_4 +
+    mean(sims$asc) * test_data$asc +
+    mean(sims$wc2_2) * test_data$wc2_2 +
+    mean(sims$wc2_3) * test_data$wc2_3 +
+    mean(sims$wc2_4) * test_data$wc2_4 +
+    mean(sims$terraza) * test_data$terraza +
+    mean(sims$amueblado) * test_data$amueblado +
+    mean(sims$lujo) * test_data$lujo 
+  
+  
+  
+  y_pred = exp(y_pred)
+  y <- exp(test_data$log_price)
+  
+  
+  # Compute a measure of predictive performance
+  RMSE <- sqrt(mean((y_pred - y)^2))
+  
+  print(RMSE)
+  
+  rsquared = 1 - (sum((y - y_pred)^2)/sum((y - mean(y))^2))
+  
+  print(rsquared)
+  
+  df_metrics[df_metrics$model == 'pooled',]$r_2 = round(rsquared, 3)
+  df_metrics[df_metrics$model == 'pooled',]$rmse = round(RMSE, 3)
+  
+  print(df_metrics)
+  }
 
 
 # predictions no pooled ---------------------------------------------------
 
-posterior_samples <- rstan::extract(fit)
+NO_POOLED = TRUE
 
-new_x1 <- log(test_data$square_mt)
-new_x2 <- test_data$rooms
-new_barri <- as.integer(test_data$barri)
-N_new <- length(new_x1)
-
-n_samples <- length(posterior_samples$sigma_y)
-
-y_pred <- matrix(NA, nrow = N_new, ncol = n_samples)
-
-for (i in 1:N_new) {
-  for (j in 1:n_samples) {
-    y_pred[i, j] <- posterior_samples$b0[j, new_barri[i]] +
-      posterior_samples$log_mt[j] * new_x1[i] +
-      posterior_samples$n_hab[j] * new_x2[i]
+if(NO_POOLED){
+  
+  fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_no_pooled.RDS") # no pooled 1435.512
+  
+  sims <- rstan::extract(fit)
+  
+  n.sims <- nrow(sims$b0)
+  n.test <- nrow(test_data)
+  y.tilde <- matrix(0, nrow = n.sims, ncol = n.test)
+  for (i in 1:n.test) {
+    print(i)
+    y.tilde[,i] <- rnorm(n.sims, sims$b0[,test_data$barri[i]] 
+                         + sims$log_smt * test_data$log_smt[i]
+                         + sims$rooms2_1 * test_data$rooms2_1[i]
+                         + sims$rooms2_2 * test_data$rooms2_2[i]
+                         + sims$rooms2_3 * test_data$rooms2_3[i]
+                         + sims$rooms2_4 * test_data$rooms2_4[i]
+                         + sims$asc * test_data$asc[i]
+                         + sims$wc2_2 * test_data$wc2_2[i]
+                         + sims$wc2_3 * test_data$wc2_3[i]
+                         + sims$wc2_4 * test_data$wc2_4[i]
+                         + sims$terraza * test_data$terraza[i]
+                         + sims$amueblado * test_data$amueblado[i]
+                         + sims$lujo * test_data$lujo[i]
+                         , sims$sigma_y)
   }
+  
+  y.tilde.exp <- exp(y.tilde)
+  
+  # Compute the predicted mean price for each observation in the test datahttp://127.0.0.1:36221/graphics/plot_zoom_png?width=2195&height=1182
+  predicted_means <- apply(y.tilde.exp, 2, mean)
+  
+  # Compute the actual mean price for each observation in the test data
+  actual_means <- exp(test_data$log_price)
+  
+  RMSE <- sqrt(mean((predicted_means - actual_means)^2))
+  
+  print(RMSE)
+  
+  rsquared = 1 - (sum((actual_means - predicted_means)^2)/sum((actual_means - mean(actual_means))^2))
+  
+  print(rsquared)
+  
+  df_metrics[df_metrics$model == 'no_pooled',]$r_2 = round(rsquared, 3)
+  df_metrics[df_metrics$model == 'no_pooled',]$rmse = round(RMSE, 3)
+  
+  print(df_metrics)
 }
-
-y_pred_mean <- rowMeans(y_pred)
-y_pred_mean <- exp(y_pred_mean)
-# y_pred_sd <- apply(y_pred, 1, sd)
-
-RMSE <- sqrt(mean((y_pred_mean - y)^2))
-
-print(RMSE)
-
-rsquared = 1 - (sum((y - y_pred_mean)^2)/sum((y - mean(y))^2))
-
-print(rsquared)
 
 
 # modelo jerarquico barrio ------------------------------------------------
-fit
-sims <- rstan::extract(fit)
 
-# broom.mixed::tidy(sims)
+HIER = TRUE
 
-
-n.sims <- nrow(sims$b0)
-n.test <- nrow(test_data)
-y.tilde <- matrix(0, nrow = n.sims, ncol = n.test)
-for (i in 1:n.test) {
-  print(i)
-  y.tilde[,i] <- rnorm(n.sims, sims$b0[,test_data$barri[i]] 
-                       + sims$log_mt * log(test_data$square_mt[i]) 
-                       + sims$n_hab * test_data$rooms[i]
-                       , sims$sigma_y)
+if(HIER){
+  
+  fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2.RDS")
+  fit
+  sims <- rstan::extract(fit)
+  
+  # broom.mixed::tidy(sims)
+  
+  
+  n.sims <- nrow(sims$b0)
+  n.test <- nrow(test_data)
+  y.tilde <- matrix(0, nrow = n.sims, ncol = n.test)
+  for (i in 1:n.test) {
+    print(i)
+    y.tilde[,i] <- rnorm(n.sims, sims$b0[,test_data$barri[i]] 
+                         + sims$log_smt * log(test_data$square_mt[i]) 
+                         + sims$rooms2_1 * test_data$rooms2_1[i]
+                         + sims$rooms2_2 * test_data$rooms2_2[i]
+                         + sims$rooms2_3 * test_data$rooms2_3[i]
+                         + sims$rooms2_4 * test_data$rooms2_4[i]
+                         + sims$asc * test_data$asc[i]
+                         + sims$wc2_2 * test_data$wc2_2[i]
+                         + sims$wc2_3 * test_data$wc2_3[i]
+                         + sims$wc2_4 * test_data$wc2_4[i]
+                         + sims$terraza * test_data$terraza[i]
+                         + sims$amueblado * test_data$amueblado[i]
+                         + sims$lujo * test_data$lujo[i]
+                         , sims$sigma_y)
+  }
+  
+  y.tilde.exp <- exp(y.tilde)
+  
+  # Compute the predicted mean price for each observation in the test datahttp://127.0.0.1:36221/graphics/plot_zoom_png?width=2195&height=1182
+  predicted_means <- apply(y.tilde.exp, 2, mean)
+  
+  # Compute the actual mean price for each observation in the test data
+  actual_means <- exp(test_data$log_price)
+  
+  
+  RMSE <- sqrt(mean((predicted_means - actual_means)^2))
+  
+  print(RMSE)
+  
+  rsquared = 1 - (sum((actual_means - predicted_means)^2)/sum((actual_means - mean(actual_means))^2))
+  
+  print(rsquared)
+  
+  df_metrics[df_metrics$model == 'hierarchical',]$r_2 = round(rsquared, 3)
+  df_metrics[df_metrics$model == 'hierarchical',]$rmse = round(RMSE, 3)
+  
+  print(df_metrics)
 }
 
-y.tilde.exp <- exp(y.tilde)
 
-# Compute the predicted mean price for each observation in the test datahttp://127.0.0.1:36221/graphics/plot_zoom_png?width=2195&height=1182
-predicted_means <- apply(y.tilde.exp, 2, mean)
-
-# Compute the actual mean price for each observation in the test data
-actual_means <- exp(test_data$log_price)
-
-
-RMSE <- sqrt(mean((predicted_means - actual_means)^2))
-
-print(RMSE)
-
-rsquared = 1 - (sum((actual_means - predicted_means)^2)/sum((actual_means - mean(actual_means))^2))
-
-print(rsquared)
 
 
 
 # Resto de moldelos jerarquicos -------------------------------------------
 
-# Generate predictions for the test data
-n.sims <- nrow(sims$a)
-n.test <- nrow(test_data)
-y.tilde <- matrix(0, nrow = n.sims, ncol = n.test)
-for (i in 1:n.test) {
-  print(i)
-  y.tilde[,i] <- rnorm(n.sims, sims$a[,test_data$barri[i]] + sims$b * log(test_data$square_mt[i]) + sims$c * test_data$rooms[i]
-                       + sims$d * test_data$wc[i] +
-                         sims$e * test_data$lujo[i] +
-                         sims$f * test_data$asc[i]
-                       + sims$b6 * test_data$terraza[i]
-                       + sims$b7 * test_data$barri_playa[i]
-                       , sims$sigma_y)
+
+HIER_COV = TRUE
+
+if(HIER_COV){
+  
+  fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")
+  
+  sims <- rstan::extract(fit)  
+  
+  # Generate predictions for the test data
+  n.sims <- nrow(sims$b0)
+  n.test <- nrow(test_data)
+  y.tilde <- matrix(0, nrow = n.sims, ncol = n.test)
+  
+  for (i in 1:n.test) {
+    print(i)
+    y.tilde[,i] <- rnorm(n.sims, sims$b0[,test_data$barri[i]] 
+                         + sims$log_smt * log(test_data$square_mt[i]) 
+                         + sims$rooms2_1 * test_data$rooms2_1[i]
+                         + sims$rooms2_2 * test_data$rooms2_2[i]
+                         + sims$rooms2_3 * test_data$rooms2_3[i]
+                         + sims$rooms2_4 * test_data$rooms2_4[i]
+                         + sims$asc * test_data$asc[i]
+                         + sims$wc2_2 * test_data$wc2_2[i]
+                         + sims$wc2_3 * test_data$wc2_3[i]
+                         + sims$wc2_4 * test_data$wc2_4[i]
+                         + sims$terraza * test_data$terraza[i]
+                         + sims$amueblado * test_data$amueblado[i]
+                         + sims$lujo * test_data$lujo[i]
+                         , sims$sigma_y)
+  }
+  
+  # # Transform the predictions back to the original scale
+  y.tilde.exp <- exp(y.tilde)
+  
+  # Compute the predicted mean price for each observation in the test datahttp://127.0.0.1:36221/graphics/plot_zoom_png?width=2195&height=1182
+  predicted_means <- apply(y.tilde.exp, 2, mean)
+  
+  # Compute the actual mean price for each observation in the test data
+  actual_means <- exp(test_data$log_price)
+  
+  # Compute a measure of predictive performance
+  RMSE <- sqrt(mean((predicted_means - actual_means)^2))
+  
+  print(RMSE)
+  
+  rsquared = 1 - (sum((actual_means - predicted_means)^2)/sum((actual_means - mean(actual_means))^2))
+  
+  print(rsquared)
+  
+  df_metrics[df_metrics$model == 'hierarchical_cov',]$r_2 = round(rsquared, 3)
+  df_metrics[df_metrics$model == 'hierarchical_cov',]$rmse = round(RMSE, 3)
+  
+  print(df_metrics)
+  
 }
-
-# # Transform the predictions back to the original scale
-y.tilde.exp <- exp(y.tilde)
-
-# Compute the predicted mean price for each observation in the test datahttp://127.0.0.1:36221/graphics/plot_zoom_png?width=2195&height=1182
-predicted_means <- apply(y.tilde.exp, 2, mean)
-
-# Compute the actual mean price for each observation in the test data
-actual_means <- exp(test_data$log_price)
-
-# Compute a measure of predictive performance
-RMSE <- sqrt(mean((predicted_means - actual_means)^2))
-
-print(RMSE)
-
-rsquared = 1 - (sum((actual_means - predicted_means)^2)/sum((actual_means - mean(actual_means))^2))
-
-print(rsquared)
-
-plot(actual_means,predicted_means)
+  
 
 
-test_data$y_tilde = predicted_means
 
 
-names(test_data)
-test_data %>% ggplot(aes(x=price,y=y_tilde,color = as.factor(lujo))) + geom_jitter(alpha=0.5,shape = 1) +
-  facet_wrap(vars(distrito2)) +
-  theme_bw()
+
+# TODO: guardar tabla de metricas y pasar a formato latex
+
+# TODO: mover a viz
+
+# plot(actual_means,predicted_means)
+# 
+# 
+# test_data$y_tilde = predicted_means
+# 
+# 
+# names(test_data)
+# test_data %>% ggplot(aes(x=price,y=y_tilde,color = as.factor(lujo))) + geom_jitter(alpha=0.5,shape = 1) +
+#   facet_wrap(vars(distrito2)) +
+#   theme_bw()
+# 
+# 
+# print(RMSE)
 
 
-print(RMSE)
 
 # jerarquico rooms y wc binarias ------------------------------------------
 
 # test_data = test_data %>% filter(barri != "Vilapicina i la Torre Llobeta")
 
-# Generate predictions for the test data
-n.sims <- nrow(sims$b0)
-n.test <- nrow(test_data)
-y.tilde <- matrix(0, nrow = n.sims, ncol = n.test)
-for (i in 1:n.test) {
-  print(i)
-  y.tilde[,i] <- rnorm(n.sims, sims$b0[,test_data$barri[i]] + sims$log_smt * log(test_data$square_mt[i])  
-                       + sims$rooms2_1 * test_data$rooms2_1[i]
-                       + sims$rooms2_2 * test_data$rooms2_2[i]
-                       + sims$rooms2_3 * test_data$rooms2_3[i]
-                       + sims$rooms2_4 * test_data$rooms2_4[i]
-                       + sims$wc2_2 * test_data$wc2_2[i]
-                       + sims$wc2_3 * test_data$wc2_3[i]
-                       + sims$wc2_4 * test_data$wc2_4[i]
-                       + sims$asc * test_data$asc[i] 
-                       + sims$terraza * test_data$terraza[i]
-                       + sims$amueblado * test_data$amueblado[i]
-                       + sims$lujo * test_data$lujo[i]
-                       , sims$sigma_y)
-}
-
-# # Transform the predictions back to the original scale
-y.tilde.exp <- exp(y.tilde)
-
-# Compute the predicted mean price for each observation in the test datahttp://127.0.0.1:36221/graphics/plot_zoom_png?width=2195&height=1182
-predicted_means <- apply(y.tilde.exp, 2, mean)
-
-# Compute the actual mean price for each observation in the test data
-actual_means <- exp(test_data$log_price)
-
-# Compute a measure of predictive performance
-RMSE <- sqrt(mean((predicted_means - actual_means)^2))
-
-print(RMSE)
-
-rsquared = 1 - (sum((actual_means - predicted_means)^2)/sum((actual_means - mean(actual_means))^2))
-
-print(rsquared)
+# # Generate predictions for the test data
+# n.sims <- nrow(sims$b0)
+# n.test <- nrow(test_data)
+# y.tilde <- matrix(0, nrow = n.sims, ncol = n.test)
+# for (i in 1:n.test) {
+#   print(i)
+#   y.tilde[,i] <- rnorm(n.sims, sims$b0[,test_data$barri[i]] + sims$log_smt * log(test_data$square_mt[i])  
+#                        + sims$rooms2_1 * test_data$rooms2_1[i]
+#                        + sims$rooms2_2 * test_data$rooms2_2[i]
+#                        + sims$rooms2_3 * test_data$rooms2_3[i]
+#                        + sims$rooms2_4 * test_data$rooms2_4[i]
+#                        + sims$wc2_2 * test_data$wc2_2[i]
+#                        + sims$wc2_3 * test_data$wc2_3[i]
+#                        + sims$wc2_4 * test_data$wc2_4[i]
+#                        + sims$asc * test_data$asc[i] 
+#                        + sims$terraza * test_data$terraza[i]
+#                        + sims$amueblado * test_data$amueblado[i]
+#                        + sims$lujo * test_data$lujo[i]
+#                        , sims$sigma_y)
+# }
+# 
+# # # Transform the predictions back to the original scale
+# y.tilde.exp <- exp(y.tilde)
+# 
+# # Compute the predicted mean price for each observation in the test datahttp://127.0.0.1:36221/graphics/plot_zoom_png?width=2195&height=1182
+# predicted_means <- apply(y.tilde.exp, 2, mean)
+# 
+# # Compute the actual mean price for each observation in the test data
+# actual_means <- exp(test_data$log_price)
+# 
+# # Compute a measure of predictive performance
+# RMSE <- sqrt(mean((predicted_means - actual_means)^2))
+# 
+# print(RMSE)
+# 
+# rsquared = 1 - (sum((actual_means - predicted_means)^2)/sum((actual_means - mean(actual_means))^2))
+# 
+# print(rsquared)
 
 
