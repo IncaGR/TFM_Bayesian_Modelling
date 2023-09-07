@@ -83,17 +83,17 @@ df_metrics = data.frame(model = c('lm','pooled','no_pooled','hierarchical','hier
 # test wrmse
 
 # Sample data: Replace this with your actual data
-predicted <- c(1, 2, 3, 4, 5)
-actual <- c(1.2, 1.8, 3.5, 3.8, 5.2)
-neighborhood <- c('A', 'A', 'B', 'B', 'B')
-
-# Compute the weights
-weights <- 1 / table(neighborhood)
-obs_weights <- weights[neighborhood]
-
-# Compute the weighted RMSE
-wrmse <- sqrt(sum(obs_weights * (actual - predicted)^2) / sum(obs_weights))
-wrmse
+# predicted <- c(1, 2, 3, 4, 5)
+# actual <- c(1.2, 1.8, 3.5, 3.8, 5.2)
+# neighborhood <- c('A', 'A', 'B', 'B', 'B')
+# 
+# # Compute the weights
+# weights <- 1 / table(neighborhood)
+# obs_weights <- weights[neighborhood]
+# 
+# # Compute the weighted RMSE
+# wrmse <- sqrt(sum(obs_weights * (actual - predicted)^2) / sum(obs_weights))
+# wrmse
 
 test_data$id_barri
 
@@ -107,7 +107,7 @@ POOLED = TRUE
 
 if(POOLED){   
   
-  fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_pooled.RDS")
+  fit <- readRDS("./1_data/2_data_Idealista/3_fitted_data/model_pooled.RDS")
   
   df = tidyMCMC(fit) 
   k = df %>% filter(!grepl("^b0|sigma_y|lp_",df$term)) %>% nrow()
@@ -163,7 +163,7 @@ NO_POOLED = TRUE
 
 if(NO_POOLED){
   
-  fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_no_pooled.RDS") # no pooled 1435.512
+  fit <- readRDS("./1_data/2_data_Idealista/3_fitted_data/model_no_pooled.RDS") # no pooled 1435.512
   df = tidyMCMC(fit) 
   k = df %>% filter(!grepl("sigma_y|lp_",df$term)) %>% nrow()
   
@@ -227,7 +227,7 @@ HIER = TRUE
 
 if(HIER){
   
-  fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2.RDS")
+  fit <- readRDS("./1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2.RDS")
   df = tidyMCMC(fit) 
   
   k = df %>% filter(!grepl("sigma_y|lp_|mu_a|sigma_a",df$term)) %>% nrow()
@@ -297,7 +297,7 @@ HIER_COV = TRUE
 
 if(HIER_COV){
   
-  fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")
+  fit <- readRDS("./1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")
   df = tidyMCMC(fit) 
   
   k = df %>% filter(!grepl("sigma_y|lp_|mu_a|sigma_a|g_0|g_1",df$term)) %>% nrow()
@@ -457,7 +457,7 @@ if(HIER_COV){
 
 # predict_sample = predict_sample %>% filter(lujo == 0)
 
-lm_cook = readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/model_cook_2023-05-03.RDS")
+lm_cook = readRDS("./1_data/2_data_Idealista/model_cook_2023-05-03.RDS")
 
 # unique(test_data$barri)
 k = length(lm_cook$coefficients)
