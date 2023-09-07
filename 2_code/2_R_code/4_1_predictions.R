@@ -29,6 +29,8 @@ summary(test_data)
 
 y <- exp(test_data$log_price)
 
+n<-nrow(test_data)
+
 
 # test_data = test_data %>% filter(lujo == 0)
 
@@ -74,11 +76,30 @@ y <- exp(test_data$log_price)
 
 # Create df
 
-df_metrics = data.frame(model = c('lm','pooled','no_pooled','hierarchical','hierarchical_cov'), r_2 = c(0,0,0,0,0),rmse = c(0,0,0,0,0))
+df_metrics = data.frame(model = c('lm','pooled','no_pooled','hierarchical','hierarchical_cov'), 
+                        r_2 = c(0,0,0,0,0),r_2_adj = c(0,0,0,0,0),rmse = c(0,0,0,0,0)
+                        ,wrmse = c(0,0,0,0,0))
 
+# test wrmse
 
+# Sample data: Replace this with your actual data
+predicted <- c(1, 2, 3, 4, 5)
+actual <- c(1.2, 1.8, 3.5, 3.8, 5.2)
+neighborhood <- c('A', 'A', 'B', 'B', 'B')
 
+# Compute the weights
+weights <- 1 / table(neighborhood)
+obs_weights <- weights[neighborhood]
 
+# Compute the weighted RMSE
+wrmse <- sqrt(sum(obs_weights * (actual - predicted)^2) / sum(obs_weights))
+wrmse
+
+test_data$id_barri
+
+weights <- 1 / table(test_data$id_barri)
+
+obs_weights <- weights[test_data$id_barri]
 
 # prediction of the pooles model ------------------------------------------
 
@@ -87,6 +108,9 @@ POOLED = TRUE
 if(POOLED){   
   
   fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_pooled.RDS")
+  
+  df = tidyMCMC(fit) 
+  k = df %>% filter(!grepl("^b0|sigma_y|lp_",df$term)) %>% nrow()
   
   sims <- rstan::extract(fit)
   
@@ -113,14 +137,21 @@ if(POOLED){
   # Compute a measure of predictive performance
   RMSE <- sqrt(mean((y_pred - y)^2))
   
+  wrmse <- sqrt(sum(obs_weights * (y - y_pred)^2,na.rm= T) / sum(obs_weights,na.rm = T))
+  
   print(RMSE)
   
   rsquared = 1 - (sum((y - y_pred)^2)/sum((y - mean(y))^2))
   
+  adj_rsquared = 1 - (1-rsquared)*((n-1)/(n-k-1))
+  
+  print(adj_rsquared)
   print(rsquared)
   
   df_metrics[df_metrics$model == 'pooled',]$r_2 = round(rsquared, 3)
   df_metrics[df_metrics$model == 'pooled',]$rmse = round(RMSE, 3)
+  df_metrics[df_metrics$model == 'pooled',]$r_2_adj = round(adj_rsquared, 3)
+  df_metrics[df_metrics$model == 'pooled',]$wrmse = round(wrmse, 3)
   
   print(df_metrics)
   }
@@ -133,6 +164,8 @@ NO_POOLED = TRUE
 if(NO_POOLED){
   
   fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_no_pooled.RDS") # no pooled 1435.512
+  df = tidyMCMC(fit) 
+  k = df %>% filter(!grepl("sigma_y|lp_",df$term)) %>% nrow()
   
   sims <- rstan::extract(fit)
   
@@ -170,11 +203,19 @@ if(NO_POOLED){
   print(RMSE)
   
   rsquared = 1 - (sum((actual_means - predicted_means)^2)/sum((actual_means - mean(actual_means))^2))
+  wrmse <- sqrt(sum(obs_weights * (actual_means - predicted_means)^2,na.rm= T) / sum(obs_weights,na.rm = T))
   
+  # 1 - (1 - R.squared) * ((n - 1)/(n-p-1))
+  
+  adj_rsquared = 1 - (1-rsquared)*((n-1)/(n-k-1))
+  
+  print(adj_rsquared)
   print(rsquared)
   
   df_metrics[df_metrics$model == 'no_pooled',]$r_2 = round(rsquared, 3)
   df_metrics[df_metrics$model == 'no_pooled',]$rmse = round(RMSE, 3)
+  df_metrics[df_metrics$model == 'no_pooled',]$r_2_adj = round(adj_rsquared, 3)
+  df_metrics[df_metrics$model == 'no_pooled',]$wrmse = round(wrmse, 3)
   
   print(df_metrics)
 }
@@ -187,7 +228,10 @@ HIER = TRUE
 if(HIER){
   
   fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2.RDS")
-  fit
+  df = tidyMCMC(fit) 
+  
+  k = df %>% filter(!grepl("sigma_y|lp_|mu_a|sigma_a",df$term)) %>% nrow()
+  
   sims <- rstan::extract(fit)
   
   # broom.mixed::tidy(sims)
@@ -225,14 +269,19 @@ if(HIER){
   
   RMSE <- sqrt(mean((predicted_means - actual_means)^2))
   
+  wrmse <- sqrt(sum(obs_weights * (predicted_means - actual_means)^2,na.rm= T) / sum(obs_weights,na.rm = T))
+  
   print(RMSE)
   
   rsquared = 1 - (sum((actual_means - predicted_means)^2)/sum((actual_means - mean(actual_means))^2))
+  adj_rsquared = 1 - (1-rsquared)*((n-1)/(n-k-1))
   
   print(rsquared)
   
   df_metrics[df_metrics$model == 'hierarchical',]$r_2 = round(rsquared, 3)
   df_metrics[df_metrics$model == 'hierarchical',]$rmse = round(RMSE, 3)
+  df_metrics[df_metrics$model == 'hierarchical',]$r_2_adj = round(adj_rsquared, 3)
+  df_metrics[df_metrics$model == 'hierarchical',]$wrmse = round(wrmse, 3)
   
   print(df_metrics)
 }
@@ -249,6 +298,9 @@ HIER_COV = TRUE
 if(HIER_COV){
   
   fit <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")
+  df = tidyMCMC(fit) 
+  
+  k = df %>% filter(!grepl("sigma_y|lp_|mu_a|sigma_a|g_0|g_1",df$term)) %>% nrow()
   
   sims <- rstan::extract(fit)  
   
@@ -287,14 +339,19 @@ if(HIER_COV){
   # Compute a measure of predictive performance
   RMSE <- sqrt(mean((predicted_means - actual_means)^2))
   
+  wrmse <- sqrt(sum(obs_weights * (actual_means - predicted_means)^2,na.rm= T) / sum(obs_weights,na.rm = T))
+  
   print(RMSE)
   
   rsquared = 1 - (sum((actual_means - predicted_means)^2)/sum((actual_means - mean(actual_means))^2))
+  adj_rsquared = 1 - (1-rsquared)*((n-1)/(n-k-1))
   
   print(rsquared)
   
   df_metrics[df_metrics$model == 'hierarchical_cov',]$r_2 = round(rsquared, 3)
   df_metrics[df_metrics$model == 'hierarchical_cov',]$rmse = round(RMSE, 3)
+  df_metrics[df_metrics$model == 'hierarchical_cov',]$r_2_adj = round(adj_rsquared, 3)
+  df_metrics[df_metrics$model == 'hierarchical_cov',]$wrmse = round(wrmse, 3)
   
   print(df_metrics)
   
@@ -402,17 +459,24 @@ if(HIER_COV){
 
 lm_cook = readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/model_cook_2023-05-03.RDS")
 
+# unique(test_data$barri)
+k = length(lm_cook$coefficients)
+# lm_cook
+# test_data %>% filter(barri == "Ciutat Meridiana") 
 test_data = test_data %>% filter(barri != "Ciutat Meridiana") # removing Ciutat Meridiana
 
-predictions = exp(predict.lm(lm_cook,predict_sample))
+
+
+predictions = exp(predict.lm(lm_cook,test_data))
 
 
 # Compute the actual mean price for each observation in the test data
-real_values <- exp(predict_sample$log_price)
+real_values <- exp(test_data$log_price)
 
 # Compute a measure of predictive performance
 RMSE <- sqrt(mean((predictions - real_values)^2))
 print(RMSE)
+wrmse <- sqrt(sum(obs_weights * (predictions - real_values)^2,na.rm= T) / sum(obs_weights,na.rm = T))
 
 plot(real_values,predictions)
 
@@ -421,15 +485,22 @@ plot(real_values,predictions)
 # names(predict_sample)
 
 rsquared = 1 - (sum((real_values - predictions)^2)/sum((real_values - mean(real_values))^2))
+adj_rsquared = 1 - (1-rsquared)*((n-1)/(n-k-1))
 
 print(rsquared)
 
 df_metrics[df_metrics$model == 'lm',]$r_2 = round(rsquared, 3)
 df_metrics[df_metrics$model == 'lm',]$rmse = round(RMSE, 3)
+df_metrics[df_metrics$model == 'lm',]$r_2_adj = round(adj_rsquared, 3)
+df_metrics[df_metrics$model == 'lm',]$wrmse = round(wrmse, 3)
 
 print(df_metrics)
 
 
+# TODO: probar varibles standarizadas...
+# https://projecteuclid.org/journals/annals-of-applied-statistics/volume-2/issue-4/A-weakly-informative-default-prior-distribution-for-logistic-and-other/10.1214/08-AOAS191.full
 
-
-
+# TODO: escribir modelos bayesianos
+# TODO: escribir resultados y metricas
+# TODO: prototipo de shiny app
+# TODO: explicar shiny app, proposito y mostrar ejemplo de prediccion

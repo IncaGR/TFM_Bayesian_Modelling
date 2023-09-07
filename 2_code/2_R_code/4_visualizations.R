@@ -263,11 +263,14 @@ path = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_f
 
 hier_cov = readRDS(path)
 
+linear_model
 
-tidy_pooled = tidyMCMC(pooled,rhat = T)
-tidy_no_pooled = tidyMCMC(no_pooled,rhat = T)
-tidy_hier_1 = tidyMCMC(hier_1,rhat = T)
-tidy_hier_cov = tidyMCMC(hier_cov,rhat = T)
+summary(pooled)$summary
+
+tidy_pooled = tidyMCMC(pooled,rhat = T,ess=T)
+tidy_no_pooled = tidyMCMC(no_pooled,rhat = T,ess=T)
+tidy_hier_1 = tidyMCMC(hier_1,rhat = T,ess=T)
+tidy_hier_cov = tidyMCMC(hier_cov,rhat = T,ess=T)
 
 
 linear_model = linear_model %>% filter(!grepl("^barri|(Intercept)",linear_model$term))
