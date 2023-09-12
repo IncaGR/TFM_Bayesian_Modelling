@@ -6,14 +6,12 @@ getwd()
 
 # date_of_data = "2023-05-03" # put the date of the file you want to aggregate
 date_of_data = "2023-06-05" # test sample
-
-wd = "C:/Users/ggari/Desktop/1_projects/TFM"
-
-setwd(wd)
+date_of_data = "2023-07-09" # test sample
+date_of_data = "2023-08-03" # test sample
 
 # date_of_data = "2023-04-20" # put the date of the file you want to clean
 
-path_functions = here(wd,"2_code","2_R_code","functions","data_mapping.R")
+path_functions = here("2_code","2_R_code","functions","data_mapping.R")
 
 source(path_functions)
 
@@ -42,9 +40,9 @@ path_data_Ide = "1_data/2_data_Idealista"
 
 path_csv_clean = paste0("data_idealista_clean_",date_of_data,".csv")
 
-path_idealista = here(wd,path_data_Ide,"2_clean",path_csv_clean)
+path_idealista = here(path_data_Ide,"2_clean",path_csv_clean)
 
-path_shp_barcelona = here(wd,"1_data","3_data_Barris_Barcelona","0301040100_Barris_ADM_ETRS89.shp")
+path_shp_barcelona = here("1_data","3_data_Barris_Barcelona","0301040100_Barris_ADM_ETRS89.shp")
 
 data_idealista = read.csv(path_idealista,encoding = "UTF-8")
 
@@ -97,7 +95,7 @@ unique(data_idealista$id_barri)
 path_open_data <- "1_data/1_data_API/dataset_opendata"
 
 
-files <- list.files(here(wd,path_open_data))
+files <- list.files(here(path_open_data))
 # getwd()
 
 read_API_data()

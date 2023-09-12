@@ -114,7 +114,7 @@ read_API_data <- function(){
   # path_open_data <- "Desktop/1_projects/TFM/1_data/1_data_API/dataset_opendata"
   
   for (f in files){
-    path_open_data <- "Desktop/1_projects/TFM/1_data/1_data_API/dataset_opendata"
+    path_open_data <- "1_data/1_data_API/dataset_opendata"
     print(f)
     f_split = strsplit(f,".csv")
     path_open_data =  here(path_open_data,f)

@@ -11,14 +11,14 @@ getwd()
 
 # date_of_data = "2023-05-03" # put the date of the file you want to clean
 date_of_data = "2023-06-05" # test sample
+date_of_data = "2023-07-09" # test sample
+date_of_data = "2023-08-03" # test sample
 
 
 path_idealista_folder = paste("extraction",date_of_data, sep = "_")
 path_idealista_csv = paste0("datos_scrapping_",date_of_data,".csv")
 
-wd = "C:/Users/ggari/Desktop/1_projects/TFM"
-
-path_functions = here(wd,"2_code","2_R_code","functions","data_mapping.R")
+path_functions = here("2_code","2_R_code","functions","data_mapping.R")
 
 source(path_functions)
 
@@ -28,9 +28,9 @@ path_data_Ide = "1_data/2_data_Idealista"
 
 # path_idealista = here(wd, path_data_Ide,"1_raw","extraction_2022-11-01","datos_scrapping_2022-11-01.csv")
 # path_idealista = here(wd,path_data_Ide,"1_raw","extraction_2022-11-17","datos_scrapping_2022-11-19.csv")
-path_idealista = here(wd,path_data_Ide,"1_raw",path_idealista_folder,path_idealista_csv)
+path_idealista = here(path_data_Ide,"1_raw",path_idealista_folder,path_idealista_csv)
 
-path_shp_barcelona = here(wd,"1_data","3_data_Barris_Barcelona","0301040100_Barris_ADM_ETRS89.shp")
+path_shp_barcelona = here("1_data","3_data_Barris_Barcelona","0301040100_Barris_ADM_ETRS89.shp")
 
 data_idealista = read.csv(path_idealista,encoding = "UTF-8")
 
@@ -88,6 +88,20 @@ data_idealista = data_idealista %>%
 ggplot(data_idealista,aes(square_mt,price)) + 
   geom_jitter()
 
+
+# duplicates ids?
+
+# length(data_idealista$id)
+# length(unique(data_idealista$id))
+dup_ids= data_idealista %>% group_by(id) %>% count() %>% filter(n>1) %>% pull(id)
+
+if(length(dup_ids)>0){
+  print(paste0("Hay valores duplicados: ", length(dup_ids)))
+}
+
+# tmp = data_idealista %>% filter(id %in% dup_ids)
+
+data_idealista = data_idealista %>% distinct(id,.keep_all = T)
 
 # data_idealista = data_idealista[data_idealista$price<70000,]
 # data_idealista = data_idealista[data_idealista$price<10000,] # testing 
