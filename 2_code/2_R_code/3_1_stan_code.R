@@ -328,6 +328,23 @@ y <- data_cook$log_price
 x1 <- log(data_cook$square_mt)
 x2 <- data_cook$rooms
 
+
+# saving mapping barri name <-> b0[]
+
+tmp_map = data.frame(barri_name = levels(data_cook$barri), term = rep(1:65))
+
+tmp_map$term = paste0("b0[",tmp_map$term)
+tmp_map$term = paste0(tmp_map$term,"]")
+
+table(data_cook$barri)
+
+top_barri = data.frame(table(data_cook$barri)) %>% arrange(Freq) %>% top_n(4) %>% pull(Var1)
+low_barri = data.frame(table(data_cook$barri)) %>% arrange(Freq) %>% top_n(-4) %>% pull(Var1)
+
+tmp_map = tmp_map %>% mutate(plot = ifelse(tmp_map$barri_name %in% c(top_barri,low_barri),1,0))
+
+saveRDS(tmp_map,"./1_data/2_data_Idealista/mapping_barri_coeff.rds")
+
 data_list <- list(
   N = N,
   y = y,

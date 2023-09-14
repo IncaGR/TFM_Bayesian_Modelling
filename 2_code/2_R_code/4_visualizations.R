@@ -241,25 +241,25 @@ print(latex_table)
 
 # Model comparison viz ----------------------------------------------------
 
-linear_model = readRDS(paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/model_cook_tidy.RDS"))
+linear_model = readRDS(paste0("./1_data/2_data_Idealista/model_cook_tidy.RDS"))
 # 
 # pooled <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_pooled_tidy.RDS") # pooled 1325.239, 0.5236905
 # no_pooled <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_no_pooled.RDS") # no pooled 1435.512
 # hier_1 <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2.RDS") # 1385.68, 0.479253
 
-path = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_pooled.RDS")
+path = paste0("./1_data/2_data_Idealista/3_fitted_data/model_pooled.RDS")
 
 pooled = readRDS(path)
 
-path = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_no_pooled.RDS")
+path = paste0("./1_data/2_data_Idealista/3_fitted_data/model_no_pooled.RDS")
 
 no_pooled = readRDS(path)
 
-path = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2.RDS")
+path = paste0("./1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2.RDS")
 
 hier_1 <- readRDS(path)
 
-path = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")
+path = paste0("./1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")
 
 hier_cov = readRDS(path)
 
@@ -295,11 +295,13 @@ viz_no_pool = tidy_no_pooled %>% select(term,estimate,std.error,model)
 viz_hier = tidy_hier_1 %>% select(term,estimate,std.error,model)
 viz_hier_cov = tidy_hier_cov %>% select(term,estimate,std.error,model)
 
-# viz = rbind(viz_lm,viz_pool,viz_no_pool,viz_hier,viz_hier_cov)
-viz = rbind(viz_hier,viz_hier_cov)
+remove(viz_1)
+
+# viz_1 = rbind(viz_lm,viz_pool,viz_no_pool,viz_hier,viz_hier_cov)
+viz_1 = rbind(viz_no_pool,viz_hier,viz_hier_cov)
 
 
-ggplot(viz, aes(x = term, y = estimate, group = model, color = model)) +
+ggplot(viz_1, aes(x = term, y = estimate, group = model, color = model)) +
   geom_point() +
   # geom_line() +
   geom_errorbar(aes(ymin = estimate - std.error, ymax = estimate + std.error), width = 0.2) +
@@ -307,8 +309,38 @@ ggplot(viz, aes(x = term, y = estimate, group = model, color = model)) +
   xlab("Term") +
   ylab("Estimate") +  coord_flip()
 
+# barris plots
+
+linear_model_barri = linear_model %>% filter(grepl("^barri|(Intercept)",linear_model$term))
+
+tidy_pooled_barri = tidy_pooled %>% filter(grepl("^b0",tidy_pooled$term)) %>% mutate(term = ifelse(term == "log_mt","log_smt",term))
+
+tidy_no_pooled_barri = tidy_no_pooled  %>% filter(grepl("^b0",tidy_no_pooled$term))
+
+tidy_hier_1_barri = tidy_hier_1 %>% filter(grepl("^b0",tidy_hier_1$term))
+
+tidy_hier_cov_barri = tidy_hier_cov %>% filter(grepl("^b0",tidy_hier_cov$term))
 
 
+mapping_terms = read_rds("./1_data/2_data_Idealista/mapping_barri_coeff.rds")
 
 
+tidy_no_pooled_barri = tidy_no_pooled_barri %>% left_join(mapping_terms, by = 'term')
+tidy_hier_1_barri = tidy_hier_1_barri %>% left_join(mapping_terms, by = 'term')
+tidy_hier_cov_barri = tidy_hier_cov_barri %>% left_join(mapping_terms, by = 'term')
+
+
+tidy_no_pooled_barri$model = "no_pooled"
+tidy_hier_1_barri$model = "hierarchical"
+tidy_hier_cov_barri$model = "hierarchical_cov"
+
+viz_2 = rbind(tidy_no_pooled_barri,tidy_hier_1_barri,tidy_hier_cov_barri)
+
+ggplot(viz_2 %>% filter(plot == '1'), aes(x = barri_name, y = estimate, group = model, color = model)) +
+  geom_point() +
+  # geom_line() +
+  geom_errorbar(aes(ymin = estimate - std.error, ymax = estimate + std.error), width = 0.2) +
+  # ggtitle("Coefficientes de los barrios con mayor/ menor oferta") +
+  xlab("barrio") +
+  ylab("Coeficiente ") +  coord_flip()
 
