@@ -103,7 +103,7 @@ obs_weights <- weights[test_data$id_barri]
 
 # prediction of the pooles model ------------------------------------------
 
-POOLED = TRUE
+POOLED = FALSE
 
 if(POOLED){   
   
@@ -159,7 +159,7 @@ if(POOLED){
 
 # predictions no pooled ---------------------------------------------------
 
-NO_POOLED = TRUE
+NO_POOLED = FALSE
 
 if(NO_POOLED){
   
@@ -223,7 +223,7 @@ if(NO_POOLED){
 
 # modelo jerarquico barrio ------------------------------------------------
 
-HIER = TRUE
+HIER = FALSE
 
 if(HIER){
   
@@ -356,7 +356,67 @@ if(HIER_COV){
   print(df_metrics)
   
 }
+
+
+# aqui ya hemos elegido el modelo hier con covariable
+# ahora quiero ver la forma de hacer la predicciones 1 a 1 
+# para poder implementarlas en una tabla en shiny
+
+mpaping = here("1_data","2_data_Idealista","mapping_barri_coeff.rds")
   
+mapping = readRDS(mpaping)
+
+
+# Define values for the predictors
+neighborhood_value <- 9
+rooms2_2 <- 0
+rooms2_3 <- 0
+rooms2_4 <- 1
+wc2_2 <- 1
+wc2_4 <- 0
+terraza <- 1
+asc <- 1
+smt <- 90
+lujo <- 0
+amueblado <- 0
+
+
+# Extract the posterior samples for coefficients (assuming your model has a linear structure)
+ # Assuming you have a variable named 'b0' in your model
+
+# Initialize an empty vector to store the linear predictions
+
+
+linear_predictions <- numeric(n.sims)
+
+# Loop through each posterior sample to calculate the linear prediction
+for (i in 1:n.sims) {
+  linear_predictions[i] <- b0_samples[i, neighborhood_value] +
+    rooms2_3 * sims$rooms2_3[i] + 
+    rooms2_4 * sims$rooms2_4[i] +
+    wc2_2 * sims$wc2_2[i] +
+    terraza * sims$terraza[i] +
+    asc * sims$asc[i] +
+    log(smt) * sims$log_smt[i] +
+    lujo * sims$lujo[i] +
+    amueblado * sims$amueblado[i]
+}
+
+# Assuming your model involves log-transformed price
+predicted_prices <- exp(linear_predictions)
+
+# Calculate summary statistics
+mean_predicted_price <- mean(predicted_prices)
+median_predicted_price <- median(predicted_prices)
+credible_interval <- quantile(predicted_prices, c(0.025, 0.975))
+
+
+print(mean_predicted_price)
+
+hist(predicted_prices)
+
+
+
 
 
 

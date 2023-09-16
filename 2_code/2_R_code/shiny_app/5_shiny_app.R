@@ -81,3 +81,100 @@ server <- function(input, output) {
 # Run the Shiny app
 shinyApp(ui = ui, server = server)
 
+
+
+# shiny app con pestañas
+
+# library(shiny)
+# library(leaflet)
+# library(dplyr)
+
+# Define the UI
+ui <- fluidPage(
+  titlePanel("Precios Alquiler Barcelona"),
+  
+  navbarPage(
+    "Barcelona Rent Prediction",
+    tabPanel("Map", 
+             leafletOutput("map")),
+    tabPanel("Select Features",
+             selectInput("neighborhood", "Barrio:",
+                         choices = unique(barcelona_rent_gp$NOM)),
+             sliderInput("bedrooms", "Número de habitaciones:",
+                         min = 1, max = 10, value = 4),
+             checkboxInput("furnished", "Amueblado", value = FALSE),
+             sliderInput("bathrooms", "Número de baños:",
+                         min = 1, max = 5, value = 2),
+             actionButton("predictButton", "Generar Predicción")
+    ),
+    tabPanel("Results",
+             tableOutput("predictionTable")
+    )
+  )
+)
+
+# Define the server logic
+server <- function(input, output) {
+  
+  # Render the map
+  output$map <- renderLeaflet({
+    leaflet() %>%
+      addTiles() %>%
+      addPolygons(
+        data = barcelona_rent_gp,
+        fillColor = ~colorPalette()(price),
+        fillOpacity = 0.7,
+        color = "white",
+        weight = 1,
+        popup = ~paste0("<b>Barrio: </b>", NOM,
+                        "<br><b>Precio medio: </b>", price, "€")
+      ) %>%
+      addLegend(
+        position = "bottomright",
+        pal = colorPalette(),
+        values = barcelona_rent_gp$price,
+        title = "Precio medio alquiler (€)",
+        opacity = 1
+      )
+  })
+  
+  # Define the color palette for the map polygons
+  colorPalette <- reactive({
+    colorNumeric(
+      palette = "Blues",
+      domain = barcelona_rent_gp$price
+    )
+  })
+  
+  # Lógica para generar predicciones
+  observeEvent(input$predictButton, {
+    # Obtener los valores seleccionados por el usuario
+    selected_neighborhood <- input$neighborhood
+    selected_bedrooms <- input$bedrooms
+    selected_furnished <- input$furnished
+    selected_bathrooms <- input$bathrooms
+    
+    # Realizar predicciones con los valores seleccionados
+    # Reemplaza esto con tu lógica de predicción real
+    predicted_price <- runif(1, 1000, 5000)  # Ejemplo: predicción aleatoria
+    
+    # Crear una tabla de resultados
+    results_df <- data.frame(
+      Barrio = selected_neighborhood,
+      Habitaciones = selected_bedrooms,
+      Amueblado = ifelse(selected_furnished, "Sí", "No"),
+      Baños = selected_bathrooms,
+      Precio_Predicho = predicted_price
+    )
+    
+    # Mostrar la tabla de resultados
+    output$predictionTable <- renderTable({
+      results_df
+    })
+  })
+}
+
+# Run the Shiny app
+shinyApp(ui = ui, server = server)
+
+
