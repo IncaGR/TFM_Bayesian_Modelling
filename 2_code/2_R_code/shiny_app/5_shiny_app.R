@@ -3,6 +3,7 @@ library(leaflet)
 library(dplyr)
 library(sf)
 library(ggplot2)
+library(here)
 # Load the data
 # data(barcelona_rent)
 
@@ -29,13 +30,24 @@ barcelona_rent_gp <- st_transform(barcelona_rent_gp, "+proj=longlat +datum=WGS84
 # Load the data
 # data(barcelona_rent)
 
-names(barcelona_rent_gp)
-
-head(barcelona_rent_gp)
+# names(barcelona_rent_gp)
+# 
+# head(barcelona_rent_gp)
 
 barcelona_rent_gp$price =  round(barcelona_rent_gp$price,1)
 
 fit <- readRDS("./1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS") # modelo
+
+mpaping = here("1_data","2_data_Idealista","mapping_barri_coeff.rds")
+
+mapping = readRDS(mpaping)
+
+names(mapping)
+
+mapping$num = 1:65
+
+
+
 
 # 5 -----------------------------------------------------------------------
 
@@ -128,6 +140,8 @@ server <- function(input, output) {
     # Asumiendo que tienes el modelo previamente ajustado en `fit`
     sims <- rstan::extract(fit)
     
+    barrio_index = filter(mapping, barri_name == selected_neighborhood)$num
+    
     # Definir los valores de las características para la predicción
     neighborhood_value <- selected_neighborhood
     rooms2_1 <- ifelse(selected_bedrooms == '1',1,0)
@@ -149,7 +163,7 @@ server <- function(input, output) {
     
     # Calcular las predicciones lineales para cada muestra
     for (i in 1:n.sims) {
-      linear_predictions[i] <- sims$b0[i, 1] + # 1 neighborhood_value
+      linear_predictions[i] <- sims$b0[i, barrio_index] + # 1 neighborhood_value
         rooms2_1 * sims$rooms2_1[i] +
         rooms2_2 * sims$rooms2_2[i] +
         rooms2_3 * sims$rooms2_3[i] + 
