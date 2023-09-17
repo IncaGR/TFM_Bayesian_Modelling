@@ -2,6 +2,7 @@ library(shiny)
 library(leaflet)
 library(dplyr)
 library(sf)
+library(ggplot2)
 # Load the data
 # data(barcelona_rent)
 
@@ -34,60 +35,10 @@ head(barcelona_rent_gp)
 
 barcelona_rent_gp$price =  round(barcelona_rent_gp$price,1)
 
-# Define the UI
-ui <- fluidPage(
-  titlePanel("Precios Alquiler Barcelona"),
-  
-  mainPanel(
-    leafletOutput("map")
-  )
-  
-)
+fit <- readRDS("./1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS") # modelo
 
-# Define the server logic
-server <- function(input, output) {
-  
-  # Render the map
-  output$map <- renderLeaflet({
-    leaflet() %>%
-      addTiles() %>%
-      addPolygons(
-        data = barcelona_rent_gp,
-        fillColor = ~colorPalette()(price), # Cambio aquí para usar colorPalette() correctamente
-        fillOpacity = 0.7,
-        color = "white",
-        weight = 1,
-        popup = ~paste0("<b>Barrio: </b>", NOM,
-                        "<br><b>Precio medio: </b>", price, "€")
-      ) %>%
-      addLegend(
-        position = "bottomright",
-        pal = colorPalette(), # Cambio aquí para usar colorPalette() correctamente
-        values = barcelona_rent_gp$price,
-        title = "Precio medio alquiler (€)",
-        opacity = 1
-      )
-  })
-  
-  # Define the color palette for the map polygons
-  colorPalette <- reactive({
-    colorNumeric(
-      palette = "Blues",
-      domain = barcelona_rent_gp$price
-    )
-  })
-}
+# 5 -----------------------------------------------------------------------
 
-# Run the Shiny app
-shinyApp(ui = ui, server = server)
-
-
-
-# shiny app con pestañas
-
-# library(shiny)
-# library(leaflet)
-# library(dplyr)
 
 # Define the UI
 ui <- fluidPage(
@@ -100,15 +51,31 @@ ui <- fluidPage(
     tabPanel("Select Features",
              selectInput("neighborhood", "Barrio:",
                          choices = unique(barcelona_rent_gp$NOM)),
-             sliderInput("bedrooms", "Número de habitaciones:",
-                         min = 1, max = 10, value = 4),
+             selectInput("bedrooms", "Número de habitaciones:",
+                         choices = c("0", "1", "2", "3", "4 o más"),
+                         selectize = FALSE),
+             selectInput("bathrooms", "Número de baños:",
+                         choices = c("1", "2", "3", "4 o más"),
+                         selectize = FALSE),
              checkboxInput("furnished", "Amueblado", value = FALSE),
-             sliderInput("bathrooms", "Número de baños:",
-                         min = 1, max = 5, value = 2),
-             actionButton("predictButton", "Generar Predicción")
-    ),
-    tabPanel("Results",
-             tableOutput("predictionTable")
+             checkboxInput("terrace", "Terraza", value = FALSE),
+             checkboxInput("lift", "Ascensor", value = FALSE),
+             checkboxInput("luxe", "Lujo", value = FALSE),
+             textInput("sqmeters", "Metros Cuadrados:", value = "500"),
+             actionButton("predictButton", "Generar Predicción"),
+             
+             # Agregar la pestaña "Results" dentro de "Select Features"
+             conditionalPanel(
+               condition = "input.predictButton > 0",
+               tabsetPanel(
+                 tabPanel("Results",
+                          tableOutput("predictionTable")
+                 )
+               )
+             ),
+             
+             # Agregar una pestaña para el histograma y el control deslizante de bins
+             plotOutput("priceHistogram")
     )
   )
 )
@@ -146,25 +113,110 @@ server <- function(input, output) {
     )
   })
   
-  # Lógica para generar predicciones
-  observeEvent(input$predictButton, {
+  # Crear una variable reactiva para almacenar las predicciones lineales
+  linear_predictions <- reactive({
     # Obtener los valores seleccionados por el usuario
     selected_neighborhood <- input$neighborhood
     selected_bedrooms <- input$bedrooms
-    selected_furnished <- input$furnished
     selected_bathrooms <- input$bathrooms
+    selected_furnished <- input$furnished
+    selected_terrace <- input$terrace
+    selected_lift <- input$lift
+    selected_luxe <- input$luxe
+    selected_sqmeters <- as.numeric(input$sqmeters)  # Asegurarse de que sea numérico
     
-    # Realizar predicciones con los valores seleccionados
-    # Reemplaza esto con tu lógica de predicción real
-    predicted_price <- runif(1, 1000, 5000)  # Ejemplo: predicción aleatoria
+    # Asumiendo que tienes el modelo previamente ajustado en `fit`
+    sims <- rstan::extract(fit)
+    
+    # Definir los valores de las características para la predicción
+    neighborhood_value <- selected_neighborhood
+    rooms2_1 <- ifelse(selected_bedrooms == '1',1,0)
+    rooms2_2 <-ifelse(selected_bedrooms == '2',1,0)
+    rooms2_3 <- ifelse(selected_bedrooms == '3',1,0)  # Puedes ajustar estos valores según las selecciones del usuario
+    rooms2_4 <- ifelse(selected_bedrooms == '4 o más',1,0)
+    wc2_2 <- ifelse(selected_bathrooms == '2',1,0)
+    wc2_3 <- ifelse(selected_bathrooms == '3',1,0)
+    wc2_4 <- ifelse(selected_bathrooms == '4 o más',1,0)
+    terraza <- ifelse(selected_terrace, 1, 0)
+    asc <- ifelse(selected_lift, 1, 0)
+    smt <- log(selected_sqmeters)
+    lujo <- ifelse(selected_luxe, 1, 0)
+    amueblado <- ifelse(selected_furnished, 1, 0)
+    
+    # Inicializar un vector para almacenar las predicciones lineales
+    n.sims <- nrow(sims$b0)
+    linear_predictions <- numeric(n.sims)
+    
+    # Calcular las predicciones lineales para cada muestra
+    for (i in 1:n.sims) {
+      linear_predictions[i] <- sims$b0[i, 1] + # 1 neighborhood_value
+        rooms2_1 * sims$rooms2_1[i] +
+        rooms2_2 * sims$rooms2_2[i] +
+        rooms2_3 * sims$rooms2_3[i] + 
+        rooms2_4 * sims$rooms2_4[i] +
+        wc2_2 * sims$wc2_2[i] +
+        wc2_3* sims$wc2_3[i] +
+        wc2_4* sims$wc2_4[i] +
+        terraza * sims$terraza[i] +
+        asc * sims$asc[i] +
+        smt * sims$log_smt[i] +
+        lujo * sims$lujo[i] +
+        amueblado * sims$amueblado[i]
+    }
+    
+    # Calcular las predicciones de precios usando el modelo
+    predicted_prices <- exp(linear_predictions)
+    
+    return(predicted_prices)
+  })
+  
+  # Crear una función para renderizar el histograma
+  output$priceHistogram <- renderPlot({
+    # Obtener el número de bins seleccionados por el usuario
+    bins <- 30
+    
+    # Crear un dataframe con las predicciones
+    prices_df <- data.frame(Precio_Predicho = linear_predictions())
+    
+    # Crear el histograma usando ggplot2
+    ggplot(prices_df, aes(x = Precio_Predicho)) +
+      geom_histogram(binwidth = (max(prices_df$Precio_Predicho) - min(prices_df$Precio_Predicho)) / bins
+                     , fill = "#00B8E7") +
+      labs(title = "Distribución de Precios Predichos",
+           x = "Precio Predicho") +
+      theme_minimal()
+  })
+  
+  # Calcular las predicciones de precios, crear la tabla de resultados y mostrarla
+  observe({
+    # Obtener las predicciones lineales
+    preds <- linear_predictions()
+    
+    # Calcular las predicciones de precios usando el modelo
+    predicted_prices <- (preds)
+    mean_predicted_price <- mean(predicted_prices)
+    
+    # Obtener los valores seleccionados por el usuario
+    selected_neighborhood <- input$neighborhood
+    selected_bedrooms <- input$bedrooms
+    selected_bathrooms <- input$bathrooms
+    selected_furnished <- input$furnished
+    selected_terrace <- input$terrace
+    selected_lift <- input$lift
+    selected_luxe <- input$luxe
+    selected_sqmeters <- as.numeric(input$sqmeters)
     
     # Crear una tabla de resultados
     results_df <- data.frame(
       Barrio = selected_neighborhood,
+      Metros_cuadrados = selected_sqmeters,
       Habitaciones = selected_bedrooms,
-      Amueblado = ifelse(selected_furnished, "Sí", "No"),
       Baños = selected_bathrooms,
-      Precio_Predicho = predicted_price
+      Amueblado = ifelse(selected_furnished, "Sí", "No"),
+      Terraza = ifelse(selected_terrace, "Sí", "No"),
+      Ascensor = ifelse(selected_lift, "Sí", "No"),
+      Lujo = ifelse(selected_luxe, "Sí", "No"),
+      Precio_Predicho = mean_predicted_price
     )
     
     # Mostrar la tabla de resultados
@@ -172,6 +224,10 @@ server <- function(input, output) {
       results_df
     })
   })
+  
+  
+ 
+  
 }
 
 # Run the Shiny app

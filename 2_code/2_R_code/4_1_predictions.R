@@ -366,6 +366,7 @@ mpaping = here("1_data","2_data_Idealista","mapping_barri_coeff.rds")
   
 mapping = readRDS(mpaping)
 
+sims <- rstan::extract(fit)  
 
 # Define values for the predictors
 neighborhood_value <- 9
@@ -380,10 +381,6 @@ smt <- 90
 lujo <- 0
 amueblado <- 0
 
-
-# Extract the posterior samples for coefficients (assuming your model has a linear structure)
- # Assuming you have a variable named 'b0' in your model
-
 # Initialize an empty vector to store the linear predictions
 
 
@@ -391,7 +388,7 @@ linear_predictions <- numeric(n.sims)
 
 # Loop through each posterior sample to calculate the linear prediction
 for (i in 1:n.sims) {
-  linear_predictions[i] <- b0_samples[i, neighborhood_value] +
+  linear_predictions[i] <- sims$b0[i, neighborhood_value] +
     rooms2_3 * sims$rooms2_3[i] + 
     rooms2_4 * sims$rooms2_4[i] +
     wc2_2 * sims$wc2_2[i] +
