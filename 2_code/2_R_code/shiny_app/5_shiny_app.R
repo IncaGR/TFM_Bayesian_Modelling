@@ -36,7 +36,7 @@ barcelona_rent_gp <- st_transform(barcelona_rent_gp, "+proj=longlat +datum=WGS84
 
 barcelona_rent_gp$price =  round(barcelona_rent_gp$price,1)
 
-fit <- readRDS("./1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS") # modelo
+fit <- readRDS(here::here("1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")) # modelo
 
 mpaping = here("1_data","2_data_Idealista","mapping_barri_coeff.rds")
 
@@ -73,7 +73,7 @@ ui <- fluidPage(
              checkboxInput("terrace", "Terraza", value = FALSE),
              checkboxInput("lift", "Ascensor", value = FALSE),
              checkboxInput("luxe", "Lujo", value = FALSE),
-             textInput("sqmeters", "Metros Cuadrados:", value = "500"),
+             textInput("sqmeters", "Metros Cuadrados:", value = "80"),
              actionButton("predictButton", "Generar Predicción"),
              
              # Agregar la pestaña "Results" dentro de "Select Features"
