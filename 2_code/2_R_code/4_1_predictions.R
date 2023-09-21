@@ -5,6 +5,7 @@ library(ggplot2)
 library(rstan)
 library(here)
 library(broom.mixed)
+library(bayesplot)
 
 # read test data ----------------------------------------------------------
 
@@ -103,7 +104,7 @@ obs_weights <- weights[test_data$id_barri]
 
 # prediction of the pooles model ------------------------------------------
 
-POOLED = FALSE
+POOLED = TRUE
 
 if(POOLED){   
   
@@ -220,10 +221,17 @@ if(NO_POOLED){
   print(df_metrics)
 }
 
+names(fit)
+
+grepl("^b0",names(fit))
+
+!grepl("^b0|^sigma|^lp", names(fit))
+
+names(fit)[!grepl("^b0|^sigma|^lp", names(fit))]
 
 # modelo jerarquico barrio ------------------------------------------------
 
-HIER = FALSE
+HIER = TRUE
 
 if(HIER){
   
@@ -287,7 +295,7 @@ if(HIER){
 }
 
 
-
+names(fit)[!grepl("^b0|^sigma|^lp", names(fit))]
 
 
 # Resto de moldelos jerarquicos -------------------------------------------
@@ -357,6 +365,7 @@ if(HIER_COV){
   
 }
 
+names(fit)[!grepl("^b0|^sigma|^lp", names(fit))]
 
 # aqui ya hemos elegido el modelo hier con covariable
 # ahora quiero ver la forma de hacer la predicciones 1 a 1 
@@ -398,6 +407,8 @@ for (i in 1:n.sims) {
     lujo * sims$lujo[i] +
     amueblado * sims$amueblado[i]
 }
+
+
 
 # Assuming your model involves log-transformed price
 predicted_prices <- exp(linear_predictions)
