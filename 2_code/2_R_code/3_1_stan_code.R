@@ -6,6 +6,13 @@ library(broom.mixed)
 library(rstan)
 library(bayesplot)
 
+# removve and install again
+# remove.packages(c("StanHeaders","rstan"))
+# install.packages(c("StanHeaders","rstan"),type="source")
+
+# remove.packages("rstan")
+# if (file.exists(".RData")) file.remove(".RData")
+
 
 # upload data ready for modelling ------------------------------------------
 options(mc.cores = parallel::detectCores())
@@ -14,6 +21,13 @@ rstan_options(auto_write=TRUE )
 
 # install.packages("https://cran.r-project.org/src/contrib/Archive/StanHeaders/StanHeaders_2.21.0-7.tar.gz",
 #                  type="source",repos=NULL)
+# 
+# # install.packages("https://cran.r-project.org/src/contrib/Archive/rstan/rstan_2.21.7.tar.gz",
+# #                  type="source",repos=NULL)
+# 
+# This works:
+# install.packages("rstan", repos = "https://cloud.r-project.org/", dependencies = TRUE)
+
 packageVersion("StanHeaders")
 packageVersion("rstan")
 
