@@ -26,6 +26,8 @@ table(test_data$barri)
 
 test_data = test_data[!is.na(test_data$price),]
 
+test_data = test_data %>% filter(price <= 20000) # just testing
+
 summary(test_data)
 
 y <- exp(test_data$log_price)
@@ -160,7 +162,7 @@ if(POOLED){
 
 # predictions no pooled ---------------------------------------------------
 
-NO_POOLED = FALSE
+NO_POOLED = TRUE
 
 if(NO_POOLED){
   
