@@ -1,0 +1,12 @@
+name: precios_alquiler_bcn
+title: precios_alquiler_bcn
+username: ggarizga
+account: ggarizga
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10049218
+bundleId: 7749945
+url: https://ggarizga.shinyapps.io/precios_alquiler_bcn/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
