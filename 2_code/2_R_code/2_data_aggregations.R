@@ -8,6 +8,7 @@ getwd()
 date_of_data = "2023-06-05" # test sample
 date_of_data = "2023-07-09" # test sample
 date_of_data = "2023-08-03" # test sample
+date_of_data = "2023-10-04" # test sample
 
 # date_of_data = "2023-04-20" # put the date of the file you want to clean
 
@@ -286,9 +287,9 @@ data_idealista = left_join(data_idealista,atur_grp, by =c('id_barri' = 'codi_bar
 
 date_to_save <- str_extract(path_idealista, "\\d{4}-\\d{2}-\\d{2}")
 
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_modelling_",date_to_save,".RDS")
+path_to_save = paste0("1_data/2_data_Idealista/data_modelling_",date_to_save,".RDS")
 
-path_to_save_csv = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_modelling_",date_to_save,".csv")
+path_to_save_csv = paste0("1_data/2_data_Idealista/data_modelling_",date_to_save,".csv")
 
 saveRDS(data_idealista,file=path_to_save)
 

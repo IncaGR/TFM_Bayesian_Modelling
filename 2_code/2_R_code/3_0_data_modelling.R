@@ -4,7 +4,7 @@ library(here)
 library(broom)
 library(broom.mixed)
 
-library(fastDummies)
+# library(fastDummies)
 
 
 
@@ -16,6 +16,7 @@ data_date = "2023-05-03"
 data_date = "2023-06-05" # test sample
 data_date = "2023-07-09" # test sample
 data_date = "2023-08-03" # test sample
+data_date = "2023-10-04" # test sample
 
 # PREDICT DATE
 # data_predict = "2023-06-05" # movido a predicciones
@@ -304,11 +305,11 @@ ggplot(modelo_cook_tidy %>% filter(!grepl("^barri|(Intercept)",modelo_cook_tidy$
 
 date_to_save <- str_extract(path_modelling, "\\d{4}-\\d{2}-\\d{2}")
 
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/data_lm_cook_",date_to_save,".RDS")
+path_to_save = paste0("1_data/2_data_Idealista/data_lm_cook_",date_to_save,".RDS")
 
 saveRDS(data_cook,file=path_to_save)
 
-save_model = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/model_cook_",date_to_save,".RDS")
+save_model = paste0("1_data/2_data_Idealista/model_cook_",date_to_save,".RDS")
 
 saveRDS(lm_cook,file=save_model)
 
@@ -317,7 +318,7 @@ print(save_model)
 
 # save coefficients in tidy format
 
-save_tidy = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/model_cook_tidy_",date_to_save,".RDS")
+save_tidy = paste0("1_data/2_data_Idealista/model_cook_tidy_",date_to_save,".RDS")
 
 saveRDS(modelo_cook_tidy,file=save_tidy)
 

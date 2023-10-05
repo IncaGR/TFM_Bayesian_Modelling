@@ -84,8 +84,8 @@ def obtain_data_from_ids(ids, headers, cp):
     dic = {}
     url = "https://www.idealista.com/inmueble/{}/"
     
-    regex_m2 = re.compile(r'\d\d\d m²|\d\d m²')
-    regex_hab = re.compile(r'\d hab|sin habitación')
+    regex_m2 = re.compile(r'\d\d m²|\d\d\d m²')
+    regex_hab = re.compile(r'\d hab|\d\d hab|sin habitación')
     regex_baño = re.compile(r'\d baño')
     regex_planta = re.compile(r'planta \d\d|planta \d|Entreplanta|bajo')
     

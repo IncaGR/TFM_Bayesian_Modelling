@@ -1,7 +1,7 @@
 library(tidyverse)
 library(here)
 library(car)
-# library(dplyr)
+library(dplyr)
 library(lubridate)
 library(fastDummies)
 # library(stringr)
@@ -13,6 +13,7 @@ getwd()
 date_of_data = "2023-06-05" # test sample
 date_of_data = "2023-07-09" # test sample
 date_of_data = "2023-08-03" # test sample
+date_of_data = "2023-10-04"
 
 
 path_idealista_folder = paste("extraction",date_of_data, sep = "_")
@@ -170,6 +171,11 @@ ggplot(data_idealista, aes(log(square_mt))) +
 
 table(data_idealista$rooms)
 
+
+data_idealista <- data_idealista %>%
+  mutate(rooms = ifelse(rooms == 0 & price > 10000, 10, rooms))
+
+
 data_idealista = data_idealista%>%
   dplyr::mutate(rooms2 = ifelse(rooms >= 4, "4", rooms),
                 rooms2 = ifelse(rooms == 3, "3", rooms2),
@@ -214,8 +220,17 @@ ggplot(data_idealista,aes(new_planta)) + geom_bar()
 # Extract date using regular expression
 date_to_save <- str_extract(path_idealista, "\\d{4}-\\d{2}-\\d{2}")
 
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/2_clean/data_idealista_clean_",date_to_save,".csv")
+path_to_save = paste0("1_data/2_data_Idealista/2_clean/data_idealista_clean_",date_to_save,".csv")
 
 write.csv(data_idealista,path_to_save,
           fileEncoding = "UTF-8")
 print(paste0("Succesfully saved data of: ",date_to_save))
+
+
+
+
+
+
+
+
+
