@@ -12,7 +12,7 @@ def concat_csv(parent_path, folder=None):
     
     if folder is None:
         day_save = date.today()
-        directory = "extraction_{}".format(today)
+        directory = "extraction_{}".format(day_save)
         path = os.path.join(parent_path, directory)
         try:
             os.chdir(path)
