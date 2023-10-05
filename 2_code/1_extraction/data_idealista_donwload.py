@@ -23,6 +23,7 @@ cp = ["{:05d}".format(i) for i in range(8005,8043)] # 8001 - 8010 , 8011 - 8021,
 
 # url_cp = "https://www.idealista.com/buscar/alquiler-viviendas/{}/".format(cp[0])
 
+# TODO: put the paths in yaml file
 parent_path = '.\\Desktop\\1_projects\\TFM'
 
 data_idealista_path = '.\\Desktop\\1_projects\\TFM\\1_data\\2_data_Idealista\\1_raw'
