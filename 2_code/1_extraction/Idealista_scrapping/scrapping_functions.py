@@ -12,7 +12,7 @@ from datetime import date
 import os
 import yaml
 
-with open('secrets.yaml', 'r') as secrets_file:
+with open('C:\\Users\\galag\\Desktop\\1_projects\\TFM\\2_code\\1_extraction\\secrets.yaml', 'r') as secrets_file:
     secrets = yaml.safe_load(secrets_file)
 headers = secrets['headers']
 
@@ -86,7 +86,7 @@ def obtain_data_from_ids(ids, headers, cp):
     
     regex_m2 = re.compile(r'\d\d m²|\d\d\d m²')
     regex_hab = re.compile(r'\d hab|\d\d hab|sin habitación')
-    regex_baño = re.compile(r'\d baño')
+    regex_baño = re.compile(r'\d baño|\d\d baño')
     regex_planta = re.compile(r'planta \d\d|planta \d|Entreplanta|bajo')
     
     x=1
@@ -180,7 +180,7 @@ def obtain_data_from_ids(ids, headers, cp):
                 dic[i] = [titulo,localizacion,ubicacion_full,distrito2,calle,barrio,barrio2,distrito,area,precio,precio_down,metros,hab,wc,terraza,balcon,estado,year,armarios,cocina,amu,planta,calefac,ascn,aire,exterior,datalles2,cp,actualizacion,actualizacion2,extract_day]
                    
                 len_ids = len(ids)
-                print(r, "anuncio número:{}/{} cp: {}".format(x,len_ids,cp),sep="\n")
+                print(r, "anuncio número:{}/{} cp: {}".format(x,len_ids,cp),"anuncio id: {}".format(i),sep="\n")
                 
                 x += 1
                 

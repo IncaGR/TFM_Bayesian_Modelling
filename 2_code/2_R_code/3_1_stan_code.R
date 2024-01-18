@@ -6,12 +6,17 @@ library(broom.mixed)
 library(rstan)
 library(bayesplot)
 
-# removve and install again
+# remove and install again
 # remove.packages(c("StanHeaders","rstan"))
 # install.packages(c("StanHeaders","rstan"),type="source")
 
 # remove.packages("rstan")
 # if (file.exists(".RData")) file.remove(".RData")
+
+# modelling without the bug on rooms
+# 500 mt2 with 5+ wc and 0 rooms -> scrapper does not catch
+# two digits rooms
+test = '_test' # if not testing empty string ''
 
 
 # upload data ready for modelling ------------------------------------------
@@ -168,17 +173,17 @@ model = stan_model(model_code = model_code)
 # Fit the model to the data
 fit_pooled <- sampling(model, data = data_list, chains = 4, iter =2000)
 
-check_divergences(fit_pooled)
-check_hmc_diagnostics(fit_pooled)
+# check_divergences(fit_pooled)
+# check_hmc_diagnostics(fit_pooled)
 
 print(fit_pooled)
-plot(fit_pooled)
+# plot(fit_pooled)
 
-mcmc_acf(fit_pooled)
-traceplot(fit_pooled)
+# mcmc_acf(fit_pooled)
+# traceplot(fit_pooled)
 # Save pooled model -------------------------------------------------------
 
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_pooled.RDS")
+path_to_save = paste0("1_data/2_data_Idealista/3_fitted_data/model_pooled",test,".RDS")
 
 saveRDS(fit_pooled, path_to_save)
 
@@ -321,13 +326,13 @@ fit_no_pooled <- sampling(model, data = data_list, chains = 4, iter =4000, verbo
 # 
 # ## Convergence analysis
 print(fit_no_pooled)
-plot(fit_no_pooled)
+# plot(fit_no_pooled)
 
 # mcmc_trace(fit_no_pooled)
 
 # Save no pooled model ----------------------------------------------------
 
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_no_pooled.RDS")
+path_to_save = paste0("1_data/2_data_Idealista/3_fitted_data/model_no_pooled",test,".RDS")
 
 saveRDS(fit_no_pooled, path_to_save)
 
@@ -455,7 +460,7 @@ fit_hier <- sampling(model, data = data_list, chains = 4, iter =5000, verbose = 
 # 
 # ## Convergence analysis
 print(fit_hier)
-plot(fit_hier)
+# plot(fit_hier)
 
 
 
@@ -463,7 +468,7 @@ plot(fit_hier)
 
 # Save hierarchical model -------------------------------------------------
 
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2.RDS")
+path_to_save = paste0("1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2",test,".RDS")
 
 
 saveRDS(fit_hier, path_to_save)

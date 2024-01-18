@@ -11,9 +11,9 @@ getwd()
 
 # date_of_data = "2023-05-03" # put the date of the file you want to clean
 date_of_data = "2023-06-05" # test sample
-date_of_data = "2023-07-09" # test sample
-date_of_data = "2023-08-03" # test sample
-date_of_data = "2023-10-04"
+# date_of_data = "2023-07-09" # test sample
+# date_of_data = "2023-08-03" # test sample
+# date_of_data = "2023-10-04"
 
 
 path_idealista_folder = paste("extraction",date_of_data, sep = "_")
@@ -79,12 +79,14 @@ data_idealista = data_idealista %>%
   mutate(key_shp = regex_barris)
 
 
-data_idealista = data_idealista %>%
-  dplyr::rename(id = X.U.FEFF.id)
+# data_idealista = data_idealista %>%
+#   dplyr::rename(id = X.U.FEFF.id)
 
 
 # data cleaning -----------------------------------------------------------
 
+
+data_idealista$name = tolower(data_idealista$name)
 
 ggplot(data_idealista,aes(square_mt,price)) + 
   geom_jitter()
@@ -113,7 +115,7 @@ data_idealista = data_idealista[data_idealista$square_mt>10,] # casa con 0 metro
 
 ## Adding new binary variables
 data_idealista = data_idealista %>%
-  mutate(casa = ifelse(grepl("Casa o chalet",data_idealista$name)==TRUE,1,0))
+  mutate(casa = ifelse(grepl("casa o chalet|chalet|masía",data_idealista$name)==TRUE,1,0))
 
 data_idealista$casa <- as.factor(data_idealista$casa)
 
@@ -124,7 +126,7 @@ data_idealista = data_idealista %>%
 data_idealista$lujo <- as.factor(data_idealista$lujo)
 
 data_idealista = data_idealista %>%
-  mutate(estudio = ifelse(grepl("Estudio",data_idealista$name)==TRUE,1,0))
+  mutate(estudio = ifelse(grepl("estudio",data_idealista$name)==TRUE,1,0))
 
 data_idealista$estudio <- as.factor(data_idealista$estudio)
 
@@ -171,9 +173,13 @@ ggplot(data_idealista, aes(log(square_mt))) +
 
 table(data_idealista$rooms)
 
-
+# bug scrapper no cogia + de 10 habitaciones ->0
 data_idealista <- data_idealista %>%
   mutate(rooms = ifelse(rooms == 0 & price > 10000, 10, rooms))
+
+# quitar rooms = 1 con mas de 500mt2 y precio mayor 15000
+data_idealista %>% filter((rooms == 1 & price >= 15000 & square_mt >= 500))
+data_idealista = data_idealista %>% filter(!(rooms == 1 & price >= 15000 & square_mt >= 500))
 
 
 data_idealista = data_idealista%>%

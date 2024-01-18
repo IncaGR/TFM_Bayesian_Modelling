@@ -2,6 +2,9 @@ library(tidyverse)
 library(broom.mixed)
 library(car)
 
+library(xtable)
+library(knitr)
+
 theme_set(theme_minimal())
 
 # 4. Visualization --------------------------------------------------------
@@ -163,7 +166,7 @@ ggplot(df_model) +
 
 # lm coeff ----------------------------------------------------------------
 
-model_path = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/model_cook_2023-05-03.RDS")
+model_path = paste0("1_data/2_data_Idealista/model_cook_2023-05-03.RDS")
 
 model_cook = readRDS(model_path)
 
@@ -218,11 +221,11 @@ ggplot(coefs, aes(x = term, y = estimate)) +
 
 coefs
 
-library(xtable)
+
 print(xtable(coefs), type = "latex")
 
 
-library(knitr)
+
 
 variables_description <- data.frame(
   Variable = c("log_price", "barri", "square_mt", "asc", "rooms2", "new_planta", "flag_planta", "wc2", "terraza", "exterior", "amueblado", "lujo"),
@@ -298,22 +301,27 @@ viz_hier_cov = tidy_hier_cov %>% select(term,estimate,std.error,model)
 remove(viz_1)
 
 # viz_1 = rbind(viz_lm,viz_pool,viz_no_pool,viz_hier,viz_hier_cov)
-viz_1 = rbind(viz_no_pool,viz_hier,viz_hier_cov)
+viz_1 = rbind(viz_pool,viz_no_pool,viz_hier,viz_hier_cov)
+# viz_1 = rbind(viz_no_pool,viz_hier,viz_hier_cov)
 
 
 ggplot(viz_1, aes(x = term, y = estimate, group = model, color = model)) +
-  geom_point() +
+  geom_point(alpha = 0.8) +
   # geom_line() +
-  geom_errorbar(aes(ymin = estimate - std.error, ymax = estimate + std.error), width = 0.2) +
+  geom_errorbar(aes(ymin = estimate - std.error, ymax = estimate + std.error), width = 0.2, alpha = 0.4) +
   ggtitle("Estimate with Standard Error of Different Models") +
   xlab("Term") +
-  ylab("Estimate") +  coord_flip()
+  ylab("Estimate") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+# +  coord_flip()
 
 # barris plots
 
 linear_model_barri = linear_model %>% filter(grepl("^barri|(Intercept)",linear_model$term))
 
 tidy_pooled_barri = tidy_pooled %>% filter(grepl("^b0",tidy_pooled$term)) %>% mutate(term = ifelse(term == "log_mt","log_smt",term))
+
+
 
 tidy_no_pooled_barri = tidy_no_pooled  %>% filter(grepl("^b0",tidy_no_pooled$term))
 
@@ -323,6 +331,10 @@ tidy_hier_cov_barri = tidy_hier_cov %>% filter(grepl("^b0",tidy_hier_cov$term))
 
 
 mapping_terms = read_rds("./1_data/2_data_Idealista/mapping_barri_coeff.rds")
+
+mapping_terms %>% left_join(tidy_pooled_barri)
+
+tidy_pooled_barri = cbind(mapping_terms,tidy_pooled_barri%>%select(-c("term")))
 
 
 tidy_no_pooled_barri = tidy_no_pooled_barri %>% left_join(mapping_terms, by = 'term')
@@ -334,13 +346,15 @@ tidy_no_pooled_barri$model = "no_pooled"
 tidy_hier_1_barri$model = "hierarchical"
 tidy_hier_cov_barri$model = "hierarchical_cov"
 
-viz_2 = rbind(tidy_no_pooled_barri,tidy_hier_1_barri,tidy_hier_cov_barri)
+viz_2 = rbind(tidy_pooled_barri,tidy_no_pooled_barri,tidy_hier_1_barri,tidy_hier_cov_barri)
 
-ggplot(viz_2 %>% filter(plot == '1'), aes(x = barri_name, y = estimate, group = model, color = model)) +
-  geom_point() +
+ggplot(viz_2, aes(x = barri_name, y = estimate, group = model, color = model)) +
+# ggplot(viz_2 %>% filter(plot == '1'), aes(x = barri_name, y = estimate, group = model, color = model)) +
+  geom_point(alpha = 0.6) +
   # geom_line() +
-  geom_errorbar(aes(ymin = estimate - std.error, ymax = estimate + std.error), width = 0.2) +
+  geom_errorbar(aes(ymin = estimate - std.error, ymax = estimate + std.error), width = 0.5, alpha = 0.6) +
   # ggtitle("Coefficientes de los barrios con mayor/ menor oferta") +
   xlab("barrio") +
-  ylab("Coeficiente ") +  coord_flip()
+  ylab("Coeficiente ") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
 

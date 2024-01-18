@@ -7,6 +7,13 @@ library(here)
 library(broom.mixed)
 library(bayesplot)
 
+POOLED = TRUE
+NO_POOLED = TRUE
+HIER = TRUE
+HIER_COV = TRUE
+
+test = '_test'
+
 # read test data ----------------------------------------------------------
 
 set.seed(125)
@@ -26,7 +33,7 @@ table(test_data$barri)
 
 test_data = test_data[!is.na(test_data$price),]
 
-test_data = test_data %>% filter(price <= 20000) # just testing
+# test_data = test_data %>% filter(price <= 20000) # just testing
 
 summary(test_data)
 
@@ -106,11 +113,10 @@ obs_weights <- weights[test_data$id_barri]
 
 # prediction of the pooles model ------------------------------------------
 
-POOLED = TRUE
 
 if(POOLED){   
   
-  fit <- readRDS("./1_data/2_data_Idealista/3_fitted_data/model_pooled.RDS")
+  fit <- readRDS(paste0("1_data/2_data_Idealista/3_fitted_data/model_pooled",test,".RDS"))
   
   df = tidyMCMC(fit) 
   k = df %>% filter(!grepl("^b0|sigma_y|lp_",df$term)) %>% nrow()
@@ -162,11 +168,9 @@ if(POOLED){
 
 # predictions no pooled ---------------------------------------------------
 
-NO_POOLED = TRUE
-
 if(NO_POOLED){
   
-  fit <- readRDS("./1_data/2_data_Idealista/3_fitted_data/model_no_pooled.RDS") # no pooled 1435.512
+  fit <- readRDS(paste0("1_data/2_data_Idealista/3_fitted_data/model_no_pooled",test,".RDS"))# no pooled 1435.512
   df = tidyMCMC(fit) 
   k = df %>% filter(!grepl("sigma_y|lp_",df$term)) %>% nrow()
   
@@ -223,21 +227,19 @@ if(NO_POOLED){
   print(df_metrics)
 }
 
-names(fit)
-
-grepl("^b0",names(fit))
-
-!grepl("^b0|^sigma|^lp", names(fit))
-
-names(fit)[!grepl("^b0|^sigma|^lp", names(fit))]
+# names(fit)
+# 
+# grepl("^b0",names(fit))
+# 
+# !grepl("^b0|^sigma|^lp", names(fit))
+# 
+# names(fit)[!grepl("^b0|^sigma|^lp", names(fit))]
 
 # modelo jerarquico barrio ------------------------------------------------
 
-HIER = TRUE
-
 if(HIER){
   
-  fit <- readRDS("./1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2.RDS")
+  fit <- readRDS(paste0("1_data/2_data_Idealista/3_fitted_data/model_hierarchical_2",test,".RDS"))
   df = tidyMCMC(fit) 
   
   k = df %>% filter(!grepl("sigma_y|lp_|mu_a|sigma_a",df$term)) %>% nrow()
@@ -297,17 +299,14 @@ if(HIER){
 }
 
 
-names(fit)[!grepl("^b0|^sigma|^lp", names(fit))]
-
+# names(fit)[!grepl("^b0|^sigma|^lp", names(fit))]
+# 
 
 # Resto de moldelos jerarquicos -------------------------------------------
 
-
-HIER_COV = TRUE
-
 if(HIER_COV){
   
-  fit <- readRDS("./1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")
+  fit <- readRDS(paste0("1_data/2_data_Idealista/3_fitted_data/model_4_9",test,".RDS"))
   df = tidyMCMC(fit) 
   
   k = df %>% filter(!grepl("sigma_y|lp_|mu_a|sigma_a|g_0|g_1",df$term)) %>% nrow()
@@ -367,63 +366,63 @@ if(HIER_COV){
   
 }
 
-names(fit)[!grepl("^b0|^sigma|^lp", names(fit))]
-
-# aqui ya hemos elegido el modelo hier con covariable
-# ahora quiero ver la forma de hacer la predicciones 1 a 1 
-# para poder implementarlas en una tabla en shiny
-
-mpaping = here("1_data","2_data_Idealista","mapping_barri_coeff.rds")
-  
-mapping = readRDS(mpaping)
-
-sims <- rstan::extract(fit)  
-
-# Define values for the predictors
-neighborhood_value <- 9
-rooms2_2 <- 0
-rooms2_3 <- 0
-rooms2_4 <- 1
-wc2_2 <- 1
-wc2_4 <- 0
-terraza <- 1
-asc <- 1
-smt <- 90
-lujo <- 0
-amueblado <- 0
-
-# Initialize an empty vector to store the linear predictions
-
-
-linear_predictions <- numeric(n.sims)
-
-# Loop through each posterior sample to calculate the linear prediction
-for (i in 1:n.sims) {
-  linear_predictions[i] <- sims$b0[i, neighborhood_value] +
-    rooms2_3 * sims$rooms2_3[i] + 
-    rooms2_4 * sims$rooms2_4[i] +
-    wc2_2 * sims$wc2_2[i] +
-    terraza * sims$terraza[i] +
-    asc * sims$asc[i] +
-    log(smt) * sims$log_smt[i] +
-    lujo * sims$lujo[i] +
-    amueblado * sims$amueblado[i]
-}
-
-
-
-# Assuming your model involves log-transformed price
-predicted_prices <- exp(linear_predictions)
-
-# Calculate summary statistics
-mean_predicted_price <- mean(predicted_prices)
-median_predicted_price <- median(predicted_prices)
-credible_interval <- quantile(predicted_prices, c(0.025, 0.975))
-
-
-print(mean_predicted_price)
-
-hist(predicted_prices)
+# names(fit)[!grepl("^b0|^sigma|^lp", names(fit))]
+# 
+# # aqui ya hemos elegido el modelo hier con covariable
+# # ahora quiero ver la forma de hacer la predicciones 1 a 1 
+# # para poder implementarlas en una tabla en shiny
+# 
+# mpaping = here("1_data","2_data_Idealista","mapping_barri_coeff.rds")
+#   
+# mapping = readRDS(mpaping)
+# 
+# sims <- rstan::extract(fit)  
+# 
+# # Define values for the predictors
+# neighborhood_value <- 9
+# rooms2_2 <- 0
+# rooms2_3 <- 0
+# rooms2_4 <- 1
+# wc2_2 <- 1
+# wc2_4 <- 0
+# terraza <- 1
+# asc <- 1
+# smt <- 90
+# lujo <- 0
+# amueblado <- 0
+# 
+# # Initialize an empty vector to store the linear predictions
+# 
+# 
+# linear_predictions <- numeric(n.sims)
+# 
+# # Loop through each posterior sample to calculate the linear prediction
+# for (i in 1:n.sims) {
+#   linear_predictions[i] <- sims$b0[i, neighborhood_value] +
+#     rooms2_3 * sims$rooms2_3[i] + 
+#     rooms2_4 * sims$rooms2_4[i] +
+#     wc2_2 * sims$wc2_2[i] +
+#     terraza * sims$terraza[i] +
+#     asc * sims$asc[i] +
+#     log(smt) * sims$log_smt[i] +
+#     lujo * sims$lujo[i] +
+#     amueblado * sims$amueblado[i]
+# }
+# 
+# 
+# 
+# # Assuming your model involves log-transformed price
+# predicted_prices <- exp(linear_predictions)
+# 
+# # Calculate summary statistics
+# mean_predicted_price <- mean(predicted_prices)
+# median_predicted_price <- median(predicted_prices)
+# credible_interval <- quantile(predicted_prices, c(0.025, 0.975))
+# 
+# 
+# print(mean_predicted_price)
+# 
+# hist(predicted_prices)
 
 
 
@@ -527,7 +526,7 @@ hist(predicted_prices)
 
 # predict_sample = predict_sample %>% filter(lujo == 0)
 
-lm_cook = readRDS("./1_data/2_data_Idealista/model_cook_2023-05-03.RDS")
+lm_cook = readRDS("1_data/2_data_Idealista/model_cook_2023-05-03.RDS")
 
 # unique(test_data$barri)
 k = length(lm_cook$coefficients)

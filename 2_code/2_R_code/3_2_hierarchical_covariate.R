@@ -17,6 +17,7 @@ rstan_options(auto_write=TRUE )
 packageVersion("StanHeaders")
 packageVersion("rstan")
 
+test = '_test'
 
 
 data_date = "2023-05-03"
@@ -314,7 +315,7 @@ print(fit_4) # Cuando hay porblemas de multicolinearidad max depth sube y r-hat
 # path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_6.RDS") # intercept: playa+renta
 # path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_7.RDS") # varying the slope # no converge
 # path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_8.RDS") # no lujo data
-path_to_save = paste0("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS") # all variables # checkeo 
+path_to_save = paste0("1_data/2_data_Idealista/3_fitted_data/model_4_9",test,".RDS") # all variables # checkeo 
 # si lujo estaba en el dataset...
 
 
@@ -323,7 +324,7 @@ saveRDS(fit_4, path_to_save)
 
 # read fit ----------------------------------------------------------------
 
-fit_4 <- readRDS("C:/Users/ggari/Desktop/1_projects/TFM/1_data/2_data_Idealista/3_fitted_data/model_4_9.RDS")
+fit_4 <- readRDS(paste0("1_data/2_data_Idealista/3_fitted_data/model_4_9",test,".RDS"))
 
 # fit_4
 # predicting new unit -----------------------------------------------------

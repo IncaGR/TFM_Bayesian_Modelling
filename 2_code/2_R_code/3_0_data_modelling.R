@@ -9,14 +9,14 @@ library(broom.mixed)
 
 
 # Constants ---------------------------------------------------------------
-MAKE_PREDICTIONS = TRUE
+# MAKE_PREDICTIONS = TRUE
 
 # MODELLING DATE
-data_date = "2023-05-03"
+# data_date = "2023-05-03"
 data_date = "2023-06-05" # test sample
-data_date = "2023-07-09" # test sample
-data_date = "2023-08-03" # test sample
-data_date = "2023-10-04" # test sample
+# data_date = "2023-07-09" # test sample
+# data_date = "2023-08-03" # test sample
+# data_date = "2023-10-04" # test sample
 
 # PREDICT DATE
 # data_predict = "2023-06-05" # movido a predicciones
@@ -219,9 +219,9 @@ summary(lm7)
 # sin variables open data pero con la variable barrios en vez de distrito sale 0.69
 
 vif(lm7)
-
+par(mfrow=c(2,2))
 plot(lm7,ask=F)
-
+par(mfrow=c(1,1))
 # data_idealista[which(hatvalues(lm2)>0.99),]
 
 # sort(cooks.distance(lm1))
@@ -238,11 +238,15 @@ dim(df_x[df_x$cookd>0.005,])
 dim(df_x[df_x$cookd>0.002,])
 
 plot(cooks.distance(lm7))
-abline(h = 4*mean(cooksd, na.rm=T), col="red") 
+
+abline(h = 0.005, col="red") 
+abline(h = 4*mean(cooksd, na.rm=T), col="green") 
 
 
 # check .005
 # view(df_x[df_x$cookd>0.005,])
+
+df_x[df_x$cookd >= 0.005,]
 
 data_cook = df_x[df_x$cookd < 0.005,]
 

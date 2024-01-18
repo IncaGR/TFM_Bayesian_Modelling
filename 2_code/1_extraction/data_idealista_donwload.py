@@ -14,11 +14,11 @@ import yaml
 
 from Idealista_scrapping.scrapping_functions import *
 
-with open('.\\Desktop\\1_projects\\TFM\\2_code\\1_extraction\\secrets.yaml', 'r') as secrets_file:
+with open('C:\\Users\\galag\\Desktop\\1_projects\\TFM\\2_code\\1_extraction\\secrets.yaml', 'r') as secrets_file:
     secrets = yaml.safe_load(secrets_file)
 headers = secrets['headers']
 
-cp = ["{:05d}".format(i) for i in range(8005,8043)] # 8001 - 8010 , 8011 - 8021, 8021 - 8031
+cp = ["{:05d}".format(i) for i in range(8001,8043)] # 8001 - 8010 , 8011 - 8021, 8021 - 8031
 # cp
 
 # url_cp = "https://www.idealista.com/buscar/alquiler-viviendas/{}/".format(cp[0])
