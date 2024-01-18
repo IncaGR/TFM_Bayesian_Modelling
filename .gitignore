@@ -1,0 +1,4 @@
+*.csv
+*.RData
+*.Rhistory
+/1_data/2_data_Idealista/*
