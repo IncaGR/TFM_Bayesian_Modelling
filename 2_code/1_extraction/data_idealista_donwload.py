@@ -31,6 +31,7 @@ cp = ["{:05d}".format(i) for i in range(8001,8043)] # 8001 - 8010 , 8011 - 8021,
 parent_path = secrets['path']['parent_path']
 data_idealista_path = secrets['path']['data_idealista_path']
 
+#TODO: increase time to execute between request
 
 call_scrapper(cp,data_idealista_path)
 
