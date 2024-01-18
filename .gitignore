@@ -5,3 +5,7 @@
 1_data/2_data_Idealista/*.csv
 1_data/2_data_Idealista/*/*.RDS
 1_data/2_data_Idealista/*/*.csv
+
+3_plots/*/*.png
+3_plots/*/*.jpg
+3_plots/*.PNG
